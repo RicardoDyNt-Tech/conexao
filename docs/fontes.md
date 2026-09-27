@@ -221,6 +221,20 @@ https://queropassagem.com.br/onibus/{origem}-para-{destino}?ida=DD-MM-AAAA
    - O JWT (HS256) é **assinado pelo servidor**: `{ gds, from: 73, to: 1705, date, from_is_city, to_is_city }`. Não aparece no HTML. A investigação parou aqui, porque a origem do token envolve o endpoint de autenticação do site. Não vamos forjar nem extrair tokens.
 3. `GET /search-connections/{token}/18`: **busca de conexões** do próprio Quero Passagem.
 
+### ✅ Spike via navegador (Fase 5a) — 10/10/2026 como data de viagem
+`npm run spike:qp` no PC do Ricardo (Chrome, perfil persistente, headless), home + 3 páginas com 15–30 s entre elas. **Sem bloqueio nem captcha.**
+
+| Trecho | HTTP | Espera até os GDS terminarem | JSON recebidos | Respostas `/search/` | Itens em `/search/` | Cards no DOM | JSON-LD BusTrip |
+|---|---|---|---|---|---|---|---|
+| salvador-ba → catu | 200 | 13,9 s | 12 | 8 | 24 | 10 | 26 |
+| feira-de-santana-ba → salvador-ba | 200 | 7,9 s | 14 | 11 | 27 | 10 | 198 |
+| alagoinhas → catu | 200 | 10,3 s | 7 | 4 | 16 | 10 | 23 |
+
+Leitura inicial (a confirmar com os arquivos de `/search/`):
+- A página recebe o JSON completo de `/search/` sem nenhuma ação extra: **caminho JSON viável**, como na ClickBus.
+- O DOM mostra só **10 cards** por página (provável paginação/"ver mais"): o DOM sozinho não serve.
+- O JSON-LD tem mais entradas que os itens de `/search/` (ex.: 198 × 27): provavelmente outras datas/trechos ou duplicatas; não usar (já sabíamos que tem `arrivalTime` com defeito).
+
 ### 🎯 Achado importante: o Quero Passagem vende Feira → Catu COM CONEXÃO
 Segunda, 05/10/2026, 3 opções (todas com "1 conexão", vendidas como uma compra só):
 
