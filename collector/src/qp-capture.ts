@@ -3,7 +3,7 @@ import path from 'node:path';
 import type { BrowserContext, Request } from 'playwright';
 import { COLLECTOR_DIR } from './browser.js';
 import { BLOCK_STATUSES, looksBlocked } from './sources/blocking.js';
-import { isSearchUrl, qpSearchUrl, redactUrl, summarizeSearchBody } from './sources/queropassagem.js';
+import { isSearchUrl, qpSearchUrl, redactTokens, redactUrl, summarizeSearchBody } from './sources/queropassagem.js';
 
 // Captura de uma página de busca do Quero Passagem para o spike (Fase 5a, Parte 1):
 // registra as respostas JSON que a própria página recebe e o que aparece no DOM.
@@ -109,7 +109,8 @@ export async function captureLeg(ctx: BrowserContext, from: string, to: string, 
         let parsed: unknown = null;
         try { parsed = JSON.parse(body.toString('utf8')); } catch { /* não-JSON: grava cru */ }
         const file = `${n}_search.${parsed === null ? 'txt' : 'json'}`;
-        await fs.writeFile(path.join(dir, file), parsed === null ? body : JSON.stringify(parsed, null, 2));
+        await fs.writeFile(path.join(dir, file), parsed === null ? redactUrl(body.toString('utf8')).url
+          : JSON.stringify(redactTokens(parsed), null, 2)); // sem tokens
         const sum = summarizeSearchBody(parsed);
         Object.assign(rec, { file, items: sum.items, provider: sum.source });
       }

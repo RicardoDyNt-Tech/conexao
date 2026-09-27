@@ -230,10 +230,27 @@ https://queropassagem.com.br/onibus/{origem}-para-{destino}?ida=DD-MM-AAAA
 | feira-de-santana-ba → salvador-ba | 200 | 7,9 s | 14 | 11 | 27 | 10 | 198 |
 | alagoinhas → catu | 200 | 10,3 s | 7 | 4 | 16 | 10 | 23 |
 
-Leitura inicial (a confirmar com os arquivos de `/search/`):
-- A página recebe o JSON completo de `/search/` sem nenhuma ação extra: **caminho JSON viável**, como na ClickBus.
-- O DOM mostra só **10 cards** por página (provável paginação/"ver mais"): o DOM sozinho não serve.
-- O JSON-LD tem mais entradas que os itens de `/search/` (ex.: 198 × 27): provavelmente outras datas/trechos ou duplicatas; não usar (já sabíamos que tem `arrivalTime` com defeito).
+Conclusões (com os arquivos de `/search/` analisados):
+- **Fonte = JSON de `/search/`**, como na ClickBus. Uma resposta por GDS; a maioria vem vazia (`{"source": N, "itens": []}`) e quase tudo está no **GDS 1** (no Feira → Salvador, o GDS 20 trouxe 3 da Rota que o GDS 1 também trouxe). `/search-connections/` veio vazio (`[]`) nos 3 trechos.
+- O DOM mostra só **10 cards** (paginação): não serve. O JSON-LD tem `arrivalTime` quebrado (ano 2083) e mais entradas que as viagens: não usar.
+- Formato de cada item (`itens[]`):
+  ```jsonc
+  { "id": "1721e81f…",            // hash da viagem: igual entre GDS diferentes → chave estável
+    "company": { "name": "Cidade Sol" },
+    "from": "Salvador, BA - Rodoviária", "to": "Catu, BA",
+    "departure": "2026-10-10 05:00:00", "arrival": "2026-10-10 07:00:00",   // horário local
+    "seatClass": "EXECUTIVO ",     // com espaço sobrando: normalizar
+    "price": 37.9,                 // preço de vitrine (o que o card mostra, "R$ 37,90 por pessoa")
+    "tax": 11.37,                  // taxa cobrada no pagamento (~30%, mínimo R$ 5)
+    "insurance": 9.95,             // seguro opcional
+    "availableSeats": 36, "source": 1,      // source = GDS
+    "connectionTag": false,        // true = conexão vendida pelo QP
+    "tag": "ZXlK…"                 // token em base64 (JWT) por viagem: NUNCA gravar nem usar
+  }
+  ```
+- O mesmo ônibus pode vir repetido (mais de um GDS, ou até 2× no mesmo GDS) com o mesmo `id`: deduplicar por `id`.
+- Preço de vitrine do QP = `originalPrice` da ClickBus no mesmo ônibus (ex.: Salvador → Catu convencional R$ 32,29); a ClickBus às vezes mostra preço promocional menor (ClickOferta).
+- Tokens: a URL de `/search-connections/` e o campo `tag` trazem JWT embrulhado em base64. O spike oculta os dois (`<jwt>`) antes de gravar.
 
 ### 🎯 Achado importante: o Quero Passagem vende Feira → Catu COM CONEXÃO
 Segunda, 05/10/2026, 3 opções (todas com "1 conexão", vendidas como uma compra só):
