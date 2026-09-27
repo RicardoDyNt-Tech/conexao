@@ -42,7 +42,7 @@
 3. find_connections (SQL) cruza TODOS os trechos:
       Feira→Alagoinhas × Alagoinhas→Catu
       Feira→Salvador   × Salvador→Catu
-   com folga entre 60 min e 4 h, usando a HORA REAL de chegada do 1º ônibus
+   com folga entre 20 min e 4 h (era 60 min; reduzido a pedido), usando a HORA REAL de chegada do 1º ônibus
 4. App mostra as combinações: saída, chegada final, espera, preço total
 5. Modo "monte você mesmo": escolho o 1º ônibus → vejo só os 2º compatíveis
 ```
@@ -62,7 +62,7 @@
 | F1 | Buscar Feira → Catu ou Catu → Feira por data | Must |
 | F2 | Listar **todas** as combinações viáveis (via Alagoinhas e via Salvador) | Must |
 | F3 | **Modo "monte você mesmo"**: escolher o 1º ônibus e ver só os 2º compatíveis, com a chegada final | Must |
-| F4 | Filtros: "sair depois de", "chegar até", folga mínima/máxima (padrão 60 min – 4 h), classe, viação | Must |
+| F4 | Filtros: "sair depois de", "chegar até", folga mínima/máxima (padrão 20 min – 4 h), classe, viação | Must |
 | F5 | Ordenar por preço total, chegada, duração total, menor espera | Must |
 | F6 | Sinalizar conexão apertada (< 90 min) e troca de rodoviária | Must |
 | F7 | Link de compra de cada trecho + "dados de HH:MM" | Must |
@@ -199,7 +199,7 @@ create table watched_dates (
 
 ### Funções
 
-- **`find_connections(origin, dest, date, min_layover='60 min', max_layover='4 h')`**: diretas + 1 conexão por qualquer cidade H (`t1.dest = t2.origin`), com espera, duração total, preço total, `same_station` e `data_as_of`.
+- **`find_connections(origin, dest, date, min_layover='20 min', max_layover='4 h')`**: diretas + 1 conexão por qualquer cidade H (`t1.dest = t2.origin`), com espera, duração total, preço total, `same_station` e `data_as_of`.
 - **`find_second_legs(first_trip_id, dest, min_layover, max_layover)`**: para o modo "monte você mesmo". Recebe o 1º ônibus escolhido e devolve os 2º compatíveis com a chegada final.
 
 **Casos de borda com teste obrigatório:**
@@ -276,7 +276,7 @@ Autocomplete, descoberta automática de hubs (curadoria + geografia + `leg_stats
 | PC desligado → dados velhos | "Dados de HH:MM" em todo card, aviso quando > 12 h; rodada extra ao ligar o PC. |
 | Termos de uso | Uso estritamente pessoal, volume baixo, só páginas públicas, sem contornar tokens. Não sou advogado: o risco é baixo, mas não é zero. |
 | A ClickBus muda o site/endpoint | Parser isolado + fixture + alerta de falha. |
-| Perder o 2º ônibus | Folga mínima de 60 min, aviso de conexão apertada. |
+| Perder o 2º ônibus | Folga mínima de 20 min (escolha do Ricardo), aviso de conexão apertada (< 90 min). |
 | Feira → Alagoinhas raro/inexistente em alguns dias | Via Salvador sempre como alternativa. |
 
 ---

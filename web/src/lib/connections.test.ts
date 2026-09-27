@@ -42,7 +42,7 @@ describe('regras das combinações', () => {
     ]);
     expect(noCombinationReasons(cov)).toEqual([
       'Via Alagoinhas: sem ônibus Feira de Santana → Alagoinhas nesse dia.',
-      'Via Salvador: há ônibus nos dois trechos, mas os horários não se encaixam (espera de 1 h a 4 h).',
+      'Via Salvador: há ônibus nos dois trechos, mas os horários não se encaixam (espera de 20 min a 4 h).',
     ]);
   });
 });

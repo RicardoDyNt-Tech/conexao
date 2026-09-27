@@ -105,6 +105,20 @@ describe('find_connections', () => {
   });
 });
 
+describe('find_connections — folga mínima padrão de 20 min', () => {
+  it('19 min fica de fora, 20 min entra', async () => {
+    const db = await freshDb();
+    await record(db, 'feira-de-santana-todos', 'salvador-ba', D, 'ok', [
+      trip({ id: 'F', dep: `${D} 06:00`, arr: `${D} 07:30` })]);
+    await record(db, 'salvador-ba', 'catu-ba', D, 'ok', [
+      trip({ id: 'S19', dep: `${D} 07:49`, arr: `${D} 09:00` }),
+      trip({ id: 'S20', dep: `${D} 07:50`, arr: `${D} 09:10` })]);
+    const r = await db.query('select * from find_connections($1, $2, $3::date, p_earliest_only => false, p_hide_dominated => false)',
+      [FEIRA, CATU, D]);
+    expect(await pairs(db, r.rows as Row[])).toEqual(['F>S20']);
+  });
+});
+
 describe('find_connections — troca de rodoviária e diretas', () => {
   it('same_station indica troca de rodoviária no hub', async () => {
     const db = await freshDb();
@@ -149,6 +163,7 @@ describe('find_second_legs', () => {
     ]);
     await record(db, 'salvador-ba', 'catu-ba', D, 'ok', [
       trip({ id: 'S1500', dep: `${D} 15:00`, arr: `${D} 16:20`, from_station: SSA_ROD }), // antes de chegar
+      trip({ id: 'S2145', dep: `${D} 21:45`, arr: `${D} 23:05`, from_station: SSA_ROD }), // 15 min
       trip({ id: 'S2200', dep: `${D} 22:00`, arr: `${D} 23:20`, from_station: SSA_ROD }), // 30 min
       trip({ id: 'S2300', dep: `${D} 23:00`, arr: `${D1} 00:20`, price: 45.8, from_station: SSA_ROD }),
     ]);
@@ -170,15 +185,16 @@ describe('find_second_legs', () => {
     const got = r.rows.map((x) => [sid.get(x.trip_id), x.compatible, x.reason, minutes(x.layover)]);
     expect(got).toEqual([
       ['S1500', false, 'sai antes de você chegar', -390],
-      ['S2200', false, 'espera abaixo do mínimo', 30],
+      ['S2145', false, 'espera abaixo do mínimo', 15], // folga mínima padrão: 20 min
+      ['S2200', true, null, 30],
       ['S2300', true, null, 90],
       ['S0100', true, null, 210],
       ['S0600', false, 'espera acima do limite', 510],
     ]);
-    const s2300 = r.rows[2]!;
+    const s2300 = r.rows[3]!;
     expect(local(s2300.arrival_at)).toBe(`${D1} 00:20`);
     expect(s2300.total_price).toBe('85.80');
-    expect(r.rows[4]!.same_station).toBe(false);
+    expect(r.rows[5]!.same_station).toBe(false);
   });
 
   it('respeita folgas passadas por parâmetro', async () => {

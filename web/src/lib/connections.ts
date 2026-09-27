@@ -3,6 +3,9 @@ import { localDate, localDateTime, minutesBetween } from './time';
 
 /** Conexão apertada: menos de 90 min entre a chegada do 1º e a saída do 2º. */
 export const TIGHT_LAYOVER_MIN = 90;
+/** Folga padrão de find_connections (p_min_layover / p_max_layover), só para os textos. */
+export const MIN_LAYOVER_MIN = 20;
+export const MAX_LAYOVER_H = 4;
 /** Dados mais velhos que isso ganham aviso amarelo. */
 export const STALE_HOURS = 12;
 
@@ -60,7 +63,7 @@ export function noCombinationReasons(coverage: CoverageLeg[]): string[] {
     const missing = legs.filter((l) => !l.status);
     if (none.length) out.push(`Via ${hub}: sem ônibus ${none.map((l) => `${l.from_city} → ${l.to_city}`).join(' e ')} nesse dia.`);
     else if (missing.length) out.push(`Via ${hub}: trecho ${missing.map((l) => `${l.from_city} → ${l.to_city}`).join(' e ')} ainda não coletado.`);
-    else out.push(`Via ${hub}: há ônibus nos dois trechos, mas os horários não se encaixam (espera de 1 h a 4 h).`);
+    else out.push(`Via ${hub}: há ônibus nos dois trechos, mas os horários não se encaixam (espera de ${MIN_LAYOVER_MIN} min a ${MAX_LAYOVER_H} h).`);
   }
   return out;
 }
