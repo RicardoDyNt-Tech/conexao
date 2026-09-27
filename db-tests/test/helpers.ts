@@ -9,29 +9,36 @@ let seq = 0;
 export function trip(o: {
   dep: string; arr: string;            // 'AAAA-MM-DD HH:MM'
   price?: number; seats?: number; id?: string;
-  from_station?: number; to_station?: number; company?: string;
+  from_station?: number; to_station?: number; company?: string; company_slug?: string;
+  fee?: number; parts?: number; url?: string;
 }) {
   const [dd, dt] = o.dep.split(' ') as [string, string];
   const [ad, at] = o.arr.split(' ') as [string, string];
   return {
     source_trip_id: o.id ?? `t${++seq}`,
     travel_date: dd,
-    company: o.company ?? 'Viação Teste', company_slug: 'viacao-teste',
+    company: o.company ?? 'Viação Teste', company_slug: o.company_slug ?? 'viacao-teste',
     origin_station: `rod ${o.from_station ?? 0}`, origin_station_id: o.from_station ?? null,
     dest_station: `rod ${o.to_station ?? 0}`, dest_station_id: o.to_station ?? null,
     departure_at: zonedToUtcIso(dd, dt), arrival_at: zonedToUtcIso(ad, at),
     service_class: 'Convencional', price: o.price ?? 30, original_price: null,
-    seats_available: o.seats ?? 40, seats_total: 46, is_low_fare: false, parts_count: 1,
-    buy_url: 'https://example.invalid',
+    seats_available: o.seats ?? 40, seats_total: 46, is_low_fare: false, parts_count: o.parts ?? 1,
+    service_fee: o.fee ?? null,
+    buy_url: o.url ?? 'https://example.invalid',
   };
 }
 
 export async function record(db: PGlite, from: string, to: string, date: string,
-  status: string, trips: unknown[] = [], error: string | null = null) {
+  status: string, trips: unknown[] = [], error: string | null = null, source = 'clickbus') {
   return asRole(db, 'service_role', () => db.query(
-    `select record_leg_result('clickbus', $1, $2, $3::date, $4, $5::jsonb, $6) as id`,
-    [from, to, date, status, JSON.stringify(trips), error]));
+    `select record_leg_result($7, $1, $2, $3::date, $4, $5::jsonb, $6) as id`,
+    [from, to, date, status, JSON.stringify(trips), error, source]));
 }
+
+/** Slugs do Quero Passagem no seed (Catu e Alagoinhas sem "-ba"). */
+export const QP = { feira: 'feira-de-santana-ba', alagoinhas: 'alagoinhas', salvador: 'salvador-ba', catu: 'catu' };
+export const recordQp = (db: PGlite, from: string, to: string, date: string, status: string, trips: unknown[] = []) =>
+  record(db, from, to, date, status, trips, null, 'queropassagem');
 
 /** Converte timestamptz → 'AAAA-MM-DD HH:MM' em America/Bahia (UTC-3), para asserts legíveis. */
 export function local(d: Date | null): string | null {

@@ -20,7 +20,13 @@ const status = async (db: PGlite) => asRole(db, 'authenticated',
 describe('collector_status', () => {
   it('banco vazio', async () => {
     const db = await freshDb();
-    expect(await status(db)).toEqual({ last_round: null, quarantine: null, open_requests: [], collected_dates: [] });
+    expect(await status(db)).toEqual({
+      last_round: null, quarantine: null, open_requests: [], collected_dates: [],
+      sources: [
+        { source: 'clickbus', quarantine: null, last_round: null },
+        { source: 'queropassagem', quarantine: null, last_round: null },
+      ],
+    });
   });
 
   it('última rodada agrupa pelo round_id e conta os status', async () => {
