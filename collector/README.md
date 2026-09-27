@@ -17,5 +17,9 @@ npm run collect -- --legs all --days 7
 - Saída: resumo por trecho com status `ok | empty | blocked | error` (`skipped` = não rodou porque a rodada parou num bloqueio).
 - JSON bruto e normalizado vão para `output/` (fora do Git). `--no-save` desliga.
 - Bloqueio (HTTP 401/403/429 ou página de captcha) interrompe a rodada; código de saída 3.
-- Trechos: `config/legs.json` (temporário; na Fase 2 vêm do banco).
+- Trechos: vêm do banco (`route_hubs` → origem→hub e hub→destino, traduzidos por `city_source_ids`).
+  `config/legs.json` é só fallback offline (`--offline` ou sem credenciais no `.env`).
+- Gravação: cada trecho × data chama `record_leg_result` no Supabase (upsert em `trips`,
+  remove viagens que sumiram, `collector_runs`, `leg_stats`). Usa `SUPABASE_SERVICE_ROLE_KEY`
+  do `.env` da raiz do repo; falha ao gravar não para a rodada.
 - `BROWSER_EXECUTABLE=/caminho/chrome` troca o Chrome por outro binário (só para testes fora do PC).

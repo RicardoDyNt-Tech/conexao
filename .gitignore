@@ -5,3 +5,5 @@ node_modules/
 collector/.profile/
 collector/output/
 collector/dist/
+supabase/.temp/
+supabase/.branches/

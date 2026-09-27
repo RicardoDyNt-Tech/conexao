@@ -107,6 +107,21 @@ Conclusão provisória: `st-cb-px` (40 caracteres hex, formato de SHA-1) é uma 
 2. **Navegador automatizado (Playwright)** usando o site como um usuário normal e lendo a resposta de `v6/trips`, de preferência no PC do Ricardo (IP residencial).
 3. **Parceria/afiliados ClickBus** (API oficial), se um dia fizer sentido.
 
+### ✅ Gate da Fase 1: coleta via navegador funciona (26/09/2026)
+
+Spike rodado no PC do Ricardo (Chrome instalado, perfil persistente, IP residencial), abrindo a página pública e interceptando `v6/trips`. Data da viagem: **2026-09-28 (segunda)**. Pausa aleatória de 8–15 s entre páginas.
+
+| Trecho | Viagens | Headless | Janela |
+|---|---|---|---|
+| salvador-ba → catu-ba | 24 | ok | ok |
+| alagoinhas-ba → catu-ba | 17 | ok | ok |
+| feira-de-santana-todos → salvador-ba | 47 | ok | ok |
+| feira-de-santana-todos → alagoinhas-ba | 1 | ok | ok |
+| catu-ba → salvador-ba | 12 | ok | ok |
+
+- Nenhum captcha nem 403. Headless e janela deram o mesmo resultado → **o coletor roda em headless**.
+- **Feira → Alagoinhas: 1 viagem na segunda e 0 no domingo** (04/10). O trecho existe, mas é raro; a via Salvador é a alternativa de sempre.
+
 ### Estrutura (o que o coletor usa)
 
 ```jsonc
@@ -200,5 +215,5 @@ Leitura:
 - [x] Capturar o endpoint de viagens (seção 3).
 - [ ] Testar `v6/trips` sem os headers de fingerprint (`fp-cb`, `st-cb-px`, `x-customer-session-id`).
 - [ ] Testar o autocomplete sem os headers de fingerprint.
-- [ ] Repetir Feira → Alagoinhas num dia útil.
-- [ ] Testar tudo a partir de uma Supabase Edge Function (Fase 1).
+- [x] Repetir Feira → Alagoinhas num dia útil (segunda 28/09: 1 viagem).
+- [x] ~~Testar a partir de uma Supabase Edge Function~~: descartado; a coleta é via navegador no PC (plano v4).

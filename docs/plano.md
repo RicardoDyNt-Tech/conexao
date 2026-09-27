@@ -233,11 +233,11 @@ create table watched_dates (
 ## 7. Roadmap — Etapa 1
 
 ### Fase 1 — Coletor ClickBus (2–3 dias) · **GATE**
-- [ ] Repo `conexao`, `CLAUDE.md`, `docs/plano.md`, `docs/fontes.md`, fixture `trips-salvador-ba_catu-ba_2026-10-04.json`.
-- [ ] **Spike:** script Playwright abre `clickbus.com.br/onibus/salvador-ba/catu-ba?departureDate=...`, intercepta `v6/trips` e salva o JSON. Testar headless e com janela; 5 trechos seguidos com pausa.
-- [ ] Gate: se capturar os 5 sem bloqueio → seguir. Se houver bloqueio/captcha, ajustar (perfil persistente, janela, pausas maiores). Se continuar bloqueando, parar e reavaliar.
-- [ ] Parser `v6/trips` → modelo normalizado, com testes usando a fixture (inclui a chegada no dia seguinte).
-- [ ] CLI: `npm run collect -- --legs all --days 7` e `--from salvador-ba --to catu-ba --date 2026-10-04`.
+- [x] Repo `conexao`, `CLAUDE.md`, `docs/plano.md`, `docs/fontes.md`, fixture `trips-salvador-ba_catu-ba_2026-10-04.json`.
+- [x] **Spike:** script Playwright abre `clickbus.com.br/onibus/salvador-ba/catu-ba?departureDate=...`, intercepta `v6/trips` e salva o JSON. Testar headless e com janela; 5 trechos seguidos com pausa.
+- [x] Gate (26/09/2026: 5/5 ok em headless e janela; seguimos em headless): se capturar os 5 sem bloqueio → seguir. Se houver bloqueio/captcha, ajustar (perfil persistente, janela, pausas maiores). Se continuar bloqueando, parar e reavaliar.
+- [x] Parser `v6/trips` → modelo normalizado, com testes usando a fixture (inclui a chegada no dia seguinte).
+- [x] CLI: `npm run collect -- --legs all --days 7` e `--from salvador-ba --to catu-ba --date 2026-10-04`.
 
 ### Fase 2 — Banco e cruzamento (1–2 dias)
 - [ ] Migrations, seed (4 cidades + slugs + hubs), RLS/allowlist.

@@ -12,6 +12,8 @@ export interface RoundOptions {
   minPauseMs?: number;
   maxPauseMs?: number;
   log?: (msg: string) => void;
+  /** Chamado após cada trecho (ex.: gravar no Supabase). Erro aqui não para a rodada. */
+  onResult?: (r: LegResult) => Promise<void>;
 }
 
 const OUTPUT_DIR = path.join(COLLECTOR_DIR, 'output');
@@ -44,6 +46,9 @@ export async function runRound(source: Source, queries: LegQuery[], opts: RoundO
       const { raw, ...res } = await source.collect(context, q);
       results.push(res);
       log(`  ${res.status}${res.trips.length ? `: ${res.trips.length} viagens` : ''}${res.error ? ` — ${res.error}` : ''}`);
+      if (opts.onResult) {
+        await opts.onResult(res).catch((e) => log(`  ⚠ falha ao gravar no banco: ${(e as Error).message}`));
+      }
 
       if (opts.saveRaw && raw !== undefined) {
         const base = path.join(OUTPUT_DIR, `${source.name}_${q.from}_${q.to}_${q.date}`);
