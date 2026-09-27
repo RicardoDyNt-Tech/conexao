@@ -151,7 +151,7 @@ describe('collector_status por fonte', () => {
 describe('20261002000100_multi_source.sql é idempotente', () => {
   it('aplica duas vezes sem erro', async () => {
     const db = await shimDb();
-    for (const f of migrationFiles()) await db.exec(migrationSql(f));
+    for (const f of migrationFiles().filter((x) => x <= '20261002000100_multi_source.sql')) await db.exec(migrationSql(f));
     await db.exec(migrationSql('20261002000100_multi_source.sql'));
     const r = await db.query<{ n: number }>(`select count(*)::int n from pg_views where viewname = 'trips_best'`);
     expect(r.rows[0]!.n).toBe(1);

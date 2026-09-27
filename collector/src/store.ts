@@ -128,6 +128,8 @@ export interface WatchAlert {
   travel_date: string;
   max_price: number | string | null;
   min_seats_alert: number | null;
+  depart_after: string | null;   // "HH:MM:SS"
+  arrive_by: string | null;
   total_price: number | string;
   service_fee: number | string | null;
   departure_at: string;

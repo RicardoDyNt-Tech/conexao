@@ -8,6 +8,7 @@ const bahia = (d: string, t: string) => new Date(Date.parse(`${d}T${t}:00Z`) + 3
 const alert = (o: Partial<WatchAlert> = {}): WatchAlert => ({
   watch_id: 1, kind: 'price', telegram_chat_id: null, origin_city_id: F, origin_city: 'Feira de Santana',
   dest_city_id: C, dest_city: 'Catu', travel_date: '2026-10-10', max_price: '60.00', min_seats_alert: 5,
+  depart_after: null, arrive_by: null,
   total_price: '57.43', service_fee: '17.22', departure_at: bahia('2026-10-10', '14:30'), arrival_at: bahia('2026-10-10', '18:10'),
   via_city: 'Alagoinhas', min_seats: 3, seats_leg: 1, option_key: '10-20', data_as_of: bahia('2026-10-10', '07:12'), ...o,
 });
@@ -41,6 +42,13 @@ describe('mensagens de alerta', () => {
     const msg = watchAlertMessage(alert({ kind: 'seats', via_city: null, min_seats: 1, service_fee: null }));
     expect(msg).toContain('14:30 → 18:10 direto, R$ 57,43');
     expect(msg).toContain('Só 1 lugar.');
+  });
+
+  it('com janela de horário, ela aparece no cabeçalho', () => {
+    const msg = watchAlertMessage(alert({ depart_after: '10:00:00', arrive_by: '20:00:00' }));
+    expect(msg.split('\n')[1]).toBe('Feira de Santana → Catu · sáb, 10/10 (sair depois de 10:00 · chegar até 20:00)');
+    expect(watchAlertMessage(alert({ arrive_by: '19:30:00' })).split('\n')[1])
+      .toBe('Feira de Santana → Catu · sáb, 10/10 (chegar até 19:30)');
   });
 
   it('link só com APP_URL', () => {

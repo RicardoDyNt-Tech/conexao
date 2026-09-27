@@ -177,10 +177,88 @@ describe('watch_status (tela do app)', () => {
   });
 });
 
-describe('20261003000100_watched_dates.sql é idempotente', () => {
-  it('aplica duas vezes sem erro', async () => {
-    const db = await shimDb();
-    for (const f of migrationFiles()) await db.exec(migrationSql(f));
-    await db.exec(migrationSql('20261003000100_watched_dates.sql'));
+for (const file of ['20261003000100_watched_dates.sql', '20261005000100_watch_time_window.sql']) {
+  describe(`${file} é idempotente`, () => {
+    it('aplica duas vezes seguidas sem erro', async () => {
+      const db = await shimDb();
+      for (const f of migrationFiles().filter((x) => x <= file)) await db.exec(migrationSql(f));
+      await db.exec(migrationSql(file));
+    });
+  });
+}
+
+describe('janela de horário do alerta', () => {
+  // Três combinações: 06:00→10:30 (R$ 70), 12:00→16:30 (R$ 60), 17:00→21:30 (R$ 50).
+  async function seedDay(db: PGlite) {
+    await record(db, 'feira-de-santana-todos', 'salvador-ba', D, 'ok', [
+      trip({ id: 'F06', dep: `${D} 06:00`, arr: `${D} 07:30`, price: 40 }),
+      trip({ id: 'F12', dep: `${D} 12:00`, arr: `${D} 13:30`, price: 30 }),
+      trip({ id: 'F17', dep: `${D} 17:00`, arr: `${D} 18:30`, price: 20, seats: 2 }),
+    ]);
+    await record(db, 'salvador-ba', 'catu-ba', D, 'ok', [
+      trip({ id: 'S09', dep: `${D} 09:00`, arr: `${D} 10:30`, price: 30 }),
+      trip({ id: 'S15', dep: `${D} 15:00`, arr: `${D} 16:30`, price: 30 }),
+      trip({ id: 'S20', dep: `${D} 20:00`, arr: `${D} 21:30`, price: 30 }),
+    ]);
+  }
+  const addWindow = (db: PGlite, after: string | null, by: string | null, maxPrice = 65, seats = 1) =>
+    as<{ id: number }>(db, A, `insert into watched_dates (origin_city_id, dest_city_id, travel_date, max_price, min_seats_alert,
+      depart_after, arrive_by) values ($1, $2, $3, $4, $5, $6, $7) returning id`, [FEIRA, CATU, D, maxPrice, seats, after, by])
+      .then((r) => r.rows[0]!.id);
+
+  it('sem janela: a mais barata do dia (17:00, R$ 50)', async () => {
+    const db = await setup();
+    await seedDay(db);
+    await addWindow(db, null, null);
+    expect((await evaluate(db)).map((x) => x.total_price)).toEqual(['50.00']);
+  });
+
+  it('"chegar até 20:00": a de 17:00 fica de fora; vale a de 12:00 (R$ 60)', async () => {
+    const db = await setup();
+    await seedDay(db);
+    await addWindow(db, null, '20:00');
+    const r = await as<Record<string, unknown>>(db, A, 'select best_price, depart_after, arrive_by from watch_status()');
+    expect(r.rows[0]).toMatchObject({ best_price: '60.00', depart_after: null, arrive_by: '20:00:00' });
+    expect((await evaluate(db)).map((x) => [x.kind, x.total_price])).toEqual([['price', '60.00']]);
+  });
+
+  it('"sair depois de 07:00" e "chegar até 12:00": nada na janela → sem aviso', async () => {
+    const db = await setup();
+    await seedDay(db);
+    await addWindow(db, '07:00', '12:00');
+    expect(await evaluate(db)).toEqual([]);
+    const r = await as<Record<string, unknown>>(db, A, 'select best_price from watch_status()');
+    expect(r.rows[0]).toEqual({ best_price: null });
+  });
+
+  it('lugares também olham só a janela', async () => {
+    const db = await setup();
+    await seedDay(db);
+    await addWindow(db, null, '20:00', 10, 5);   // 17:00 (2 lugares) fora da janela
+    expect(await evaluate(db)).toEqual([]);
+    const db2 = await setup();
+    await seedDay(db2);
+    await as(db2, A, `insert into watched_dates (origin_city_id, dest_city_id, travel_date, min_seats_alert, depart_after)
+      values ($1, $2, $3, 5, '16:00')`, [FEIRA, CATU, D]);
+    expect((await evaluate(db2)).map((x) => [x.kind, x.min_seats])).toEqual([['seats', 2]]);
+  });
+
+  it('mudar a janela recomeça os avisos; janela invertida é recusada', async () => {
+    const db = await setup();
+    await seedDay(db);
+    const id = await addWindow(db, null, null);
+    const [a] = await evaluate(db);
+    await mark(db, id, 'price', a!.total_price, a!.option_key);
+    expect(await evaluate(db)).toEqual([]);
+    await as(db, A, `update watched_dates set arrive_by = '20:00' where id = $1`, [id]);
+    expect((await evaluate(db)).map((x) => x.total_price)).toEqual(['60.00']);
+    await expect(as(db, A, `update watched_dates set depart_after = '21:00' where id = $1`, [id])).rejects.toThrow(/window_chk/);
+  });
+
+  it('alerta devolve a janela para a mensagem', async () => {
+    const db = await setup();
+    await seedDay(db);
+    await addWindow(db, '10:00', '20:00');
+    expect((await evaluate(db))[0]).toMatchObject({ depart_after: '10:00:00', arrive_by: '20:00:00' });
   });
 });

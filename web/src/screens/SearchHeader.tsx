@@ -18,7 +18,7 @@ export function SearchHeader({ route, params, tab }: { route: Route; params: URL
           </div>
         </div>
         <span className="header-links">
-          <a className="link" href={href('/alertas', { o: p.o, d: p.d, date: p.date })}>Monitorar</a>
+          <a className="link" href={href('/alertas', { o: p.o, d: p.d, date: p.date, after: p.after, until: p.until })}>Monitorar</a>
           <a className="link" href={href('/', p)}>Alterar</a>
         </span>
       </div>

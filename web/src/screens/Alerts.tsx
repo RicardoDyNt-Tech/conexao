@@ -11,6 +11,7 @@ function addError(msg: string): string {
   if (msg === 'duplicate') return 'Você já monitora esse sentido nessa data.';
   if (/row-level security/i.test(msg)) return `Escolha uma data entre hoje e daqui a ${MAX_DAYS} dias.`;
   if (/chat_chk/i.test(msg)) return 'O chat do Telegram é só número (ex.: 123456789).';
+  if (/window_chk/i.test(msg)) return '"Sair depois de" precisa ser antes de "Chegar até".';
   return msg;
 }
 
@@ -29,6 +30,12 @@ function WatchCard({ w, onRemove }: { w: WatchStatus; onRemove: () => void }) {
           {w.max_price !== null ? `Alvo: ${fmtMoney(w.max_price)}` : 'Sem preço-alvo'}
           {w.min_seats_alert !== null && ` · avisa com ${w.min_seats_alert} lugares ou menos`}
         </div>
+        {(w.depart_after || w.arrive_by) && (
+          <div className="muted">
+            {[w.depart_after && `Sair depois de ${w.depart_after.slice(0, 5)}`,
+              w.arrive_by && `chegar até ${w.arrive_by.slice(0, 5)}`].filter(Boolean).join(' · ')}
+          </div>
+        )}
         {w.best_price !== null && w.best_departure_at && w.best_arrival_at ? (
           <div>
             Agora: <strong>{fmtMoney(w.best_price)}</strong>
@@ -36,7 +43,9 @@ function WatchCard({ w, onRemove }: { w: WatchStatus; onRemove: () => void }) {
             {' '}{w.best_via ? `via ${w.best_via}` : 'direto'}
             {w.best_service_fee ? <span className="muted"> (+ {fmtMoney(w.best_service_fee)} de taxa)</span> : null}
           </div>
-        ) : <div className="muted">Ainda sem combinações coletadas para essa data.</div>}
+        ) : <div className="muted">{w.depart_after || w.arrive_by
+          ? 'Nenhuma combinação coletada dentro desse horário.'
+          : 'Ainda sem combinações coletadas para essa data.'}</div>}
         <div className="badges">
           {hit && <span className="badge ok">Abaixo do alvo</span>}
           {low && <span className="badge warn">Poucos lugares ({w.best_min_seats})</span>}
@@ -63,6 +72,8 @@ export function Alerts({ routes, initial }: { routes: Route[]; initial: URLSearc
   const [maxPrice, setMaxPrice] = useState('');
   const [minSeats, setMinSeats] = useState('5');
   const [chat, setChat] = useState('');
+  const [after, setAfter] = useState(initial.get('after') ?? '');
+  const [until, setUntil] = useState(initial.get('until') ?? '');
   const [list, setList] = useState<WatchStatus[] | null>(null);
   const [err, setErr] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
@@ -77,6 +88,7 @@ export function Alerts({ routes, initial }: { routes: Route[]; initial: URLSearc
 
   async function submit(e: FormEvent) {
     e.preventDefault();
+    if (after && until && after >= until) { setErr('"Sair depois de" precisa ser antes de "Chegar até".'); return; }
     setBusy(true); setErr(null);
     try {
       await api.addWatch({
@@ -84,6 +96,7 @@ export function Alerts({ routes, initial }: { routes: Route[]; initial: URLSearc
         maxPrice: maxPrice ? Number(maxPrice.replace(',', '.')) : null,
         minSeats: minSeats ? Number(minSeats) : null,
         telegramChatId: chat.trim() || null,
+        departAfter: after || null, arriveBy: until || null,
       });
       setMaxPrice('');
       load();
@@ -103,7 +116,8 @@ export function Alerts({ routes, initial }: { routes: Route[]; initial: URLSearc
       <h1>Alertas</h1>
       <p className="muted">
         Monitore uma data e receba aviso no Telegram quando o preço chegar no seu alvo ou os lugares
-        estiverem acabando. A checagem roda depois da coleta diária (depende do PC do Ricardo ligado).
+        estiverem acabando. Com horário escolhido, só contam as combinações dentro dele. A checagem
+        roda depois da coleta diária (depende do PC do Ricardo ligado).
       </p>
 
       <form onSubmit={submit} className="stack card card-body">
@@ -127,6 +141,16 @@ export function Alerts({ routes, initial }: { routes: Route[]; initial: URLSearc
           <label>
             Avisar com até (lugares)
             <input type="number" inputMode="numeric" min="1" max="50" value={minSeats} onChange={(e) => setMinSeats(e.target.value)} />
+          </label>
+        </div>
+        <div className="two-cols">
+          <label>
+            Sair depois de (opcional)
+            <input type="time" value={after} onChange={(e) => setAfter(e.target.value)} />
+          </label>
+          <label>
+            Chegar até (opcional)
+            <input type="time" value={until} onChange={(e) => setUntil(e.target.value)} />
           </label>
         </div>
         <details>

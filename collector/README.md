@@ -138,6 +138,8 @@ npm run alerts                                      # avalia e manda os avisos n
 - **Preço-alvo**: a combinação mais barata da data (preço de vitrine) ficou ≤ alvo. Avisa de novo
   só se ficar ainda mais barata; mudar o alvo no app recomeça.
 - **Poucos lugares**: a combinação mais barata tem trecho com ≤ N lugares. Uma vez por combinação.
+- **Janela de horário** (opcional, por alerta): "sair depois de" / "chegar até" (Bahia, no dia da
+  viagem). Preço-alvo e poucos lugares olham a mais barata dentro da janela; mudar a janela recomeça os avisos.
 - Destino: o chat informado no alerta ou `TELEGRAM_CHAT_ID`. `APP_URL` (opcional) põe o link da
   busca no aviso. O aviso só é marcado como enviado depois de o Telegram confirmar.
 - Cada data monitorada fora da janela de 5 dias custa ~5 páginas por fonte (direta + 2 hubs × 2

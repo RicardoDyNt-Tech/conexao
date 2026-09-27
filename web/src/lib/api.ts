@@ -134,6 +134,7 @@ export function supabaseApi(sb: SupabaseClient): Api {
       const { error } = await sb.from('watched_dates').insert({
         origin_city_id: w.origin, dest_city_id: w.dest, travel_date: w.date,
         max_price: w.maxPrice, min_seats_alert: w.minSeats, telegram_chat_id: w.telegramChatId,
+        depart_after: w.departAfter, arrive_by: w.arriveBy,
       });
       if (error) throw new Error(error.code === '23505' ? 'duplicate' : error.message);
     },

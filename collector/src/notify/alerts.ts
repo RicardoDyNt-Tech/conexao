@@ -19,21 +19,30 @@ export function appLink(a: Pick<WatchAlert, 'origin_city_id' | 'dest_city_id' | 
   return `${appUrl.replace(/\/+$/, '')}/#/r?o=${a.origin_city_id}&d=${a.dest_city_id}&date=${a.travel_date}&sort=price`;
 }
 
+/** "sair depois de 10:00 · chegar até 20:00" (vazio sem janela). */
+export function windowText(a: Pick<WatchAlert, 'depart_after' | 'arrive_by'>): string {
+  const parts = [a.depart_after && `sair depois de ${a.depart_after.slice(0, 5)}`,
+    a.arrive_by && `chegar até ${a.arrive_by.slice(0, 5)}`].filter(Boolean);
+  return parts.join(' · ');
+}
+
 /** Texto do aviso no Telegram (texto simples). */
 export function watchAlertMessage(a: WatchAlert, appUrl?: string): string {
   const plus = localDate(a.arrival_at) > a.travel_date ? ' (+1)' : '';
   const route = `${hhmm(a.departure_at)} → ${hhmm(a.arrival_at)}${plus} ${a.via_city ? `via ${a.via_city}` : 'direto'}`;
   const fee = Number(a.service_fee ?? 0);
+  const win = windowText(a);
+  const header = `${a.origin_city} → ${a.dest_city} · ${fmtDay(a.travel_date)}${win ? ` (${win})` : ''}`;
   const lines = a.kind === 'price'
     ? [
         '🔔 Conexão: preço-alvo atingido',
-        `${a.origin_city} → ${a.dest_city} · ${fmtDay(a.travel_date)}`,
+        header,
         `${brl(a.total_price)} (seu alvo: ${brl(a.max_price)})`,
         route,
       ]
     : [
         '⚠️ Conexão: poucos lugares',
-        `${a.origin_city} → ${a.dest_city} · ${fmtDay(a.travel_date)}`,
+        header,
         `${route}, ${brl(a.total_price)}`,
         `Só ${a.min_seats} ${a.min_seats === 1 ? 'lugar' : 'lugares'}${a.via_city ? ` no ${a.seats_leg ?? 1}º trecho` : ''}.`,
       ];

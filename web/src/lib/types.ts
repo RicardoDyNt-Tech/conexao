@@ -156,6 +156,8 @@ export interface WatchStatus {
   max_price: number | null;
   min_seats_alert: number | null;
   telegram_chat_id: string | null;
+  depart_after: string | null;   // "HH:MM:SS"
+  arrive_by: string | null;
   last_alerted_at: string | null;
   best_price: number | null;
   best_service_fee: number | null;
@@ -169,4 +171,6 @@ export interface WatchStatus {
 export interface NewWatch {
   origin: number; dest: number; date: string;
   maxPrice: number | null; minSeats: number | null; telegramChatId: string | null;
+  /** "HH:MM" (Bahia, no dia da viagem) ou null. */
+  departAfter: string | null; arriveBy: string | null;
 }
