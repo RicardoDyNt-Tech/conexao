@@ -144,3 +144,19 @@ npm run alerts                                      # avalia e manda os avisos n
   busca no aviso. O aviso só é marcado como enviado depois de o Telegram confirmar.
 - Cada data monitorada fora da janela de 5 dias custa ~5 páginas por fonte (direta + 2 hubs × 2
   trechos) e conta no teto diário.
+
+## Spike dos sites das viações (Fase 5c)
+
+```bash
+npm run spike:webrodoviaria                    # Cidade Sol e Rota, 2 trechos cada, 2026-10-10, headless
+npm run spike:webrodoviaria -- --only rota     # só uma viação
+```
+
+- Abre a Venda Web de cada viação (`config/legs.json`, "spikeWebrodoviaria"), **preenche o formulário
+  como um usuário** (digita o começo da cidade, escolhe a sugestão, data, "pesquisar") e grava:
+  campos do formulário (`form.fields.json`), passos (`steps.json`), rede (`network.json`: URL, método,
+  status, tipo, tamanho, corpo do POST), respostas XHR (`NN_<fase>.json|txt`), HTML e print do resultado
+  e da aba do dia seguinte (para saber se troca por XHR ou recarrega).
+- ViewState, tokens, CSRF, sessão e valores longos saem ocultos (`<redacted>`) em tudo o que é gravado.
+- Mesmas regras: 15–30 s entre páginas, teto diário, quarentena **por viação** (`rota`, `cidadesol`).
+- Saída em `output/webrodoviaria/<viação>/<data>/<origem>_<destino>/`.

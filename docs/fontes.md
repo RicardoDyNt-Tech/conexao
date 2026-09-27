@@ -299,3 +299,35 @@ Leitura:
 - [ ] Testar o autocomplete sem os headers de fingerprint.
 - [x] Repetir Feira → Alagoinhas num dia útil (segunda 28/09: 1 viagem).
 - [x] ~~Testar a partir de uma Supabase Edge Function~~: descartado; a coleta é via navegador no PC (plano v4).
+
+---
+
+## 6. Sites das viações: Rota e Cidade Sol (Fase 5c)
+
+Só existem duas viações nos nossos trechos, e as duas vendem na mesma plataforma, a **Venda Web da
+webrodoviaria**:
+- Rota: `https://rotatransportes.webrodoviaria.com.br/VendaWebRotaTransportes/`
+- Cidade Sol: `https://cidadedosol.webrodoviaria.com.br/VendaWebCidadeDoSol/`
+
+Busca manual (27/09, Salvador → Catu em 10/10): resultado em `.../consulta` **sem parâmetros na URL**
+(POST ou estado na sessão); abas de data (08/10 a 12/10); cards com saída, chegada, duração, classe,
+preço e "Viagem sem Conexão". Sem captcha. Mapa de poltronas exige login. **10% off na volta**
+comprando ida e volta juntas no site da viação. Nomes das cidades: "SALVADOR - BA", "CATU - BA",
+"FEIRA DE SANTANA - BA", "ALAGOINHAS - BA".
+
+### Preço do mesmo ônibus em cada lugar (Salvador → Catu, 10/10)
+
+| Ônibus | QP vitrine | QP + taxa (o que se paga) | Site da viação |
+|---|---|---|---|
+| Cidade Sol 05:00 conv. | 37,90 | 49,27 | 41,00 |
+| Cidade Sol 05:10 / 06:30 / 08:00 conv. | 32,29 | 41,97 | 36,00 |
+| Cidade Sol 07:00 exec. | 42,54 | 55,30 | 48,00 |
+| Rota 06:00 / 09:00 conv. | 45,80 | 59,54 | 45,80 |
+
+- **Rota**: site da viação = vitrine do QP. **Cidade Sol**: site ≈ 11% acima da vitrine do QP.
+- Pelo que se paga, o **site da viação é o mais barato** (se não houver taxa no checkout dele, que
+  exige login e não foi conferido).
+- Consequência: comparar só pela vitrine (decisão da Fase 5a) favorece o QP indevidamente. A Fase 5c
+  passa a comparar pelo **preço pago** (vitrine + `service_fee`).
+
+Spike: `npm run spike:webrodoviaria` (ver `collector/README.md`). Resultado: _a preencher_.

@@ -104,5 +104,36 @@
       "from": "salvador-ba",
       "to": "feira-de-santana-ba"
     }
-  ]
+  ],
+  "spikeWebrodoviaria": {
+    "cidadesol": {
+      "label": "Cidade Sol",
+      "base": "https://cidadedosol.webrodoviaria.com.br/VendaWebCidadeDoSol/",
+      "legs": [
+        {
+          "from": "SALVADOR - BA",
+          "to": "CATU - BA"
+        },
+        {
+          "from": "FEIRA DE SANTANA - BA",
+          "to": "SALVADOR - BA"
+        }
+      ]
+    },
+    "rota": {
+      "label": "Rota",
+      "base": "https://rotatransportes.webrodoviaria.com.br/VendaWebRotaTransportes/",
+      "legs": [
+        {
+          "from": "FEIRA DE SANTANA - BA",
+          "to": "ALAGOINHAS - BA"
+        },
+        {
+          "from": "ALAGOINHAS - BA",
+          "to": "CATU - BA"
+        }
+      ]
+    }
+  },
+  "_comment_spikeWebrodoviaria": "Spike da Fase 5c: sites de venda das viações (plataforma Venda Web da webrodoviaria). Nomes das cidades como aparecem na plataforma."
 }
