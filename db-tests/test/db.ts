@@ -23,14 +23,21 @@ alter default privileges in schema public grant all on sequences to anon, authen
 alter default privileges in schema public grant execute on functions to anon, authenticated, service_role;
 `;
 
-/** Banco novo em memória com shim + migrations + seed. */
-export async function freshDb(): Promise<PGlite> {
+export const MIGRATIONS_DIR = path.join(SUPABASE_DIR, 'migrations');
+export const migrationFiles = () => fs.readdirSync(MIGRATIONS_DIR).filter((f) => f.endsWith('.sql')).sort();
+export const migrationSql = (f: string) => fs.readFileSync(path.join(MIGRATIONS_DIR, f), 'utf8');
+
+/** Banco novo em memória só com o shim do Supabase (sem migrations). */
+export async function shimDb(): Promise<PGlite> {
   const db = new PGlite();
   await db.exec(SUPABASE_SHIM);
-  const migDir = path.join(SUPABASE_DIR, 'migrations');
-  for (const f of fs.readdirSync(migDir).filter((f) => f.endsWith('.sql')).sort()) {
-    await db.exec(fs.readFileSync(path.join(migDir, f), 'utf8'));
-  }
+  return db;
+}
+
+/** Banco novo em memória com shim + migrations + seed. */
+export async function freshDb(): Promise<PGlite> {
+  const db = await shimDb();
+  for (const f of migrationFiles()) await db.exec(migrationSql(f));
   await db.exec(fs.readFileSync(path.join(SUPABASE_DIR, 'seed.sql'), 'utf8'));
   return db;
 }

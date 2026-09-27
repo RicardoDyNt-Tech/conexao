@@ -4,14 +4,18 @@
 -- 3. date_coverage(): quais trechos de uma busca já foram coletados na data
 --    (distingue "ainda não coletamos" de "sem combinações").
 -- Tudo security invoker: vale o RLS de leitura para autenticados.
+--
+-- Idempotente: no remoto, collector_runs.round_id já existia antes do 1º push desta migration
+-- (criado fora das migrations). Pode rodar de novo sem erro. Não cria policies.
 
-alter table collector_runs add column round_id uuid;
-create index collector_runs_round_idx on collector_runs (round_id);
-create index collector_runs_finished_idx on collector_runs (finished_at desc);
+alter table collector_runs add column if not exists round_id uuid;
+create index if not exists collector_runs_round_idx on collector_runs (round_id);
+create index if not exists collector_runs_finished_idx on collector_runs (finished_at desc);
 
-drop function record_leg_result(text, text, text, date, text, jsonb, text, text, timestamptz, timestamptz);
+-- Versão anterior (sem p_round_id): some se ainda existir.
+drop function if exists record_leg_result(text, text, text, date, text, jsonb, text, text, timestamptz, timestamptz);
 
-create function record_leg_result(
+create or replace function record_leg_result(
   p_source text,
   p_from_slug text,
   p_to_slug text,
@@ -107,7 +111,7 @@ end $$;
 
 -- Quarentena: mesma regra do coletor (collector/src/quarantine.ts, 24 h). Ativa se o último
 -- bloqueio foi há menos de 24 h e nenhuma coleta deu certo depois dele (--ignore-quarantine).
-create function collector_status() returns jsonb
+create or replace function collector_status() returns jsonb
 language sql stable set search_path = public as $$
   with last_block as (
     select finished_at, error, origin_city_id, dest_city_id, travel_date
@@ -162,7 +166,7 @@ $$;
 
 -- Trechos de uma busca (direta + origem→hub + hub→destino) e a última coleta ok/empty
 -- de cada um na data. status null = trecho ainda não coletado nessa data.
-create function date_coverage(p_origin int, p_dest int, p_date date)
+create or replace function date_coverage(p_origin int, p_dest int, p_date date)
 returns table (
   from_city_id int,
   from_city text,
