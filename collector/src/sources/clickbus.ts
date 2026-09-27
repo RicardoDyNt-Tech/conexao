@@ -1,6 +1,9 @@
 import type { BrowserContext, Page, Response } from 'playwright';
 import type { LegQuery, LegResult, NormalizedTrip, Source } from '../types.js';
 import { SOURCE_TZ, zonedToUtcIso } from '../time.js';
+import { BLOCK_STATUSES, looksBlocked } from './blocking.js';
+
+export { looksBlocked };
 
 export const SOURCE = 'clickbus';
 const TRIPS_API_PATH = '/web/api/v6/trips';
@@ -120,23 +123,6 @@ export function parseClickbusTrips(json: CbTripsResponse, query: LegQuery, tz: s
 // Captura: abre a página pública e lê a resposta de v6/trips que ela recebe.
 // Nada de chamar a API direto nem mexer em headers/tokens (ver CLAUDE.md).
 // ---------------------------------------------------------------------------
-
-const BLOCK_STATUSES = new Set([401, 403, 429]);
-
-/** Sinais de página de desafio/bloqueio (captcha, "access denied"). */
-export async function looksBlocked(page: Page): Promise<string | null> {
-  try {
-    const title = (await page.title()).toLowerCase();
-    const html = (await page.content()).toLowerCase();
-    if (title.includes('access') && title.includes('denied')) return `título: ${title}`;
-    for (const marker of ['px-captcha', 'press & hold', 'pressione e segure', 'g-recaptcha', 'h-captcha', 'cf-challenge']) {
-      if (html.includes(marker)) return `marcador na página: ${marker}`;
-    }
-  } catch {
-    /* página fechou/navegou: sem diagnóstico */
-  }
-  return null;
-}
 
 function isTripsResponse(r: Response, q: LegQuery): boolean {
   if (r.request().method() !== 'GET' || !r.url().includes(TRIPS_API_PATH)) return false;

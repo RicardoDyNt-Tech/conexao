@@ -94,3 +94,17 @@ npm run notify:test   # manda "Conexão: Telegram OK"
 - Rodada agendada (`--notify`): resumo só se houver erro, bloqueio ou falha ao gravar no banco;
   e aviso se a rodada inteira falhar (ex.: Supabase fora do ar).
 - Sem as variáveis, nada é enviado (só um aviso no log).
+
+## Spike do Quero Passagem (Fase 5a)
+
+```bash
+npm run spike:qp                          # 3 trechos de config/legs.json ("spikeQp"), 2026-10-10, headless
+npm run spike:qp -- --date 2026-10-12     # outra data
+```
+
+- Mesmo Chrome, perfil, trava e teto diário do coletor; abre a home do QP antes, 15–30 s entre páginas.
+- Só observa a página: grava as respostas JSON que ela recebe (`/search/` em arquivos próprios),
+  o DOM (cards com horário e preço, JSON-LD) e um print, em `output/qp/<data>/<origem>_<destino>/`.
+- JWTs são ocultados em tudo o que é gravado (`<jwt>` + claims do payload).
+- Bloqueio (HTTP 401/403/429, ou captcha sem nenhum resultado): para na hora e grava a
+  quarentena **só do QP** (`.quarantine.queropassagem.json`, 24 h).
