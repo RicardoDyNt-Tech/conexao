@@ -348,3 +348,16 @@ Nenhum captcha nem 403. O que a plataforma revelou:
   observamos; o tráfego de terceiros não é mais gravado (traz sinais do navegador). Desafio do WAF
   (HTTP 202/405 ou página "Human Verification") = bloqueio. Cidade Sol não mostrou WAF.
 
+
+### 2ª rodada do spike (27/09): dois erros do spike, nenhum bloqueio real
+- **Cidade Sol**: a origem entrou (`SALVADOR - BA`), o destino recarregou a lista
+  (`buscaLocalidade2.json?q=630`, 470 cidades) e **já deixou a 1ª cidade escolhida** (`ABREU E LIMA - PE`):
+  o select2 do destino é refeito logo depois. O clique do spike caiu nesse meio-tempo e o campo de
+  busca nunca apareceu (espera de 30 s). Corrigido: espera assentar, reaproveita dropdown já aberto,
+  tenta até 3 cliques com timeout curto.
+- **Rota: falso positivo meu.** A página normal da Rota traz um modal **escondido** de captcha de
+  *login* ("Complete o desafio para continuar o login", `#captcha-container` vazio). O spike tratava
+  a simples presença desse id como desafio do WAF e pôs a Rota em quarentena sem motivo (página 200,
+  título "Rota Transportes - Venda Web", formulário normal no print). Agora só conta como bloqueio:
+  HTTP 401/403/429 (ou 202/405 no documento), título "Human Verification" ou captcha **visível** e
+  preenchido na tela.

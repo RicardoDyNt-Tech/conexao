@@ -1,6 +1,6 @@
 import fs from 'node:fs/promises';
 import path from 'node:path';
-import type { BrowserContext, Page, Request } from 'playwright';
+import type { BrowserContext, Locator, Page, Request } from 'playwright';
 import { COLLECTOR_DIR } from './browser.js';
 import { BLOCK_STATUSES, looksBlocked } from './sources/blocking.js';
 import { redactUrl } from './sources/queropassagem.js';
@@ -229,12 +229,12 @@ async function fillCity(page: Page, f: Field, city: string, steps: string[]): Pr
 /** Campo select2 (caixa de busca por cima do select), usado na Venda Web. */
 async function fillSelect2(page: Page, selectId: string, city: string, steps: string[]): Promise<boolean> {
   const container = page.locator(`#select2-${selectId}-container`);
-  await container.click();
-  const search = page.locator('.select2-container--open .select2-search__field').first();
+  const search = await openSelect2(page, selectId, steps);
+  if (!search) return false;
   const full = city.split(' - ')[0]!;
   let typed = '';
   for (const chunk of [full.slice(0, 6), full.slice(6)].filter(Boolean)) {
-    await search.pressSequentially(chunk, { delay: 110 });
+    await search.pressSequentially(chunk, { delay: 110, timeout: 8_000 });
     typed += chunk;
     await page.waitForTimeout(1_200);
     const options = page.locator('.select2-container--open .select2-results__option');
@@ -253,6 +253,31 @@ async function fillSelect2(page: Page, selectId: string, city: string, steps: st
   await page.keyboard.press('Escape').catch(() => {});
   steps.push(`select2 #${selectId}: "${city}" não apareceu nas opções depois de digitar "${typed}"`);
   return false;
+}
+
+/**
+ * Abre o dropdown do select2 e devolve o campo de busca dele.
+ * Na Cidade Sol o destino é recriado logo depois que as opções chegam (a lista é
+ * recarregada e a 1ª cidade fica selecionada); um clique nesse meio-tempo abre um
+ * dropdown que some, ou fecha um que o site já abriu. Por isso: espera assentar,
+ * reaproveita um dropdown já aberto e tenta clicar de novo, sempre com timeout curto.
+ */
+async function openSelect2(page: Page, selectId: string, steps: string[]): Promise<Locator | null> {
+  const selection = page.locator(`[aria-labelledby="select2-${selectId}-container"]`).first();
+  const search = page.locator('.select2-container--open .select2-search__field').first();
+  await page.waitForTimeout(1_500);
+  for (let attempt = 1; attempt <= 3; attempt++) {
+    if (await search.isVisible().catch(() => false)) return search;
+    await selection.click({ timeout: 5_000 }).catch(() => {});
+    try {
+      await search.waitFor({ state: 'visible', timeout: 4_000 });
+      return search;
+    } catch {
+      await page.waitForTimeout(1_000);
+    }
+  }
+  steps.push(`select2 #${selectId}: o campo de busca não abriu após 3 cliques`);
+  return null;
 }
 
 /** Espera o select (ex.: destino) ter opções, que chegam depois de escolher a origem. */
@@ -281,13 +306,22 @@ async function fillDate(page: Page, f: Field, date: string, steps: string[]): Pr
   await page.keyboard.press('Escape').catch(() => {});      // fecha o calendário, se abriu
 }
 
-/** Página de desafio do AWS WAF (captcha "Human Verification"). O script normal do WAF não conta. */
+/**
+ * Página de desafio do AWS WAF (captcha "Human Verification") ou captcha visível na tela.
+ * A página normal da Rota já traz um modal de captcha de login escondido
+ * (`#captcha-container`, vazio) e o script do WAF: nenhum dos dois conta como bloqueio.
+ */
+const VISIBLE_CAPTCHA = `(() => {
+  const shown = (el) => { const r = el.getBoundingClientRect(); const st = getComputedStyle(el);
+    return r.width > 0 && r.height > 0 && st.visibility !== 'hidden' && st.display !== 'none'; };
+  return [...document.querySelectorAll('#captcha-container, awswaf-captcha, [id*="awswaf-captcha" i]')]
+    .some((el) => shown(el) && el.children.length > 0);
+})()`;
+
 async function wafChallenge(page: Page): Promise<string | null> {
-  const html = (await page.content().catch(() => '')).toLowerCase();
   const title = (await page.title().catch(() => '')).toLowerCase();
-  if (title.includes('human verification') || html.includes('awswafcaptcha') || html.includes('id="captcha-container"')) {
-    return 'desafio do AWS WAF';
-  }
+  if (title.includes('human verification')) return 'desafio do AWS WAF';
+  if (await page.evaluate(VISIBLE_CAPTCHA).catch(() => false)) return 'captcha visível na página';
   return null;
 }
 
