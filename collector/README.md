@@ -13,8 +13,11 @@ npm run spike -- --headed
 npm run collect -- --from salvador-ba --to catu-ba --date 2026-10-05
 npm run collect -- --legs all                             # 5 dias; começa hoje (depois das 20:00, amanhã)
 npm run collect -- --legs all --days 3 --start 2026-10-05
+npm run collect -- --legs all --dates 2026-10-10,2026-10-12   # datas específicas
 ```
 
+- `--dates`: lista separada por vírgula (sem repetição, em ordem, nada no passado, até 30);
+  não combina com `--days`/`--start`. Vale também com `--from/--to`. Conta no teto diário de páginas.
 - Saída: resumo por trecho com status `ok | empty | blocked | error` (`skipped` = não rodou porque a rodada parou num bloqueio).
 - JSON bruto e normalizado vão para `output/` (fora do Git). `--no-save` desliga.
 - Gentileza: 15–30 s entre páginas; home da ClickBus aberta alguns segundos antes da 1ª busca;

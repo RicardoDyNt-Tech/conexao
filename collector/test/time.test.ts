@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { addDays, defaultStartDate, nextMonday, todayIn, zonedToUtcIso } from '../src/time.js';
+import { addDays, defaultStartDate, nextMonday, parseDateList, todayIn, zonedToUtcIso } from '../src/time.js';
 
 describe('time', () => {
   it('zonedToUtcIso em America/Bahia (sem horário de verão)', () => {
@@ -27,5 +27,25 @@ describe('defaultStartDate', () => {
     expect(defaultStartDate(new Date('2026-09-27T23:00:00Z'))).toBe('2026-09-28'); // 20:00 local
     expect(defaultStartDate(new Date('2026-09-28T02:30:00Z'))).toBe('2026-09-28'); // 23:30 do dia 27 local
     expect(defaultStartDate(new Date('2026-09-28T03:00:00Z'))).toBe('2026-09-28'); // 00:00 do dia 28
+  });
+});
+
+describe('parseDateList (--dates)', () => {
+  const today = '2026-10-02';
+  it('ordena, tira repetidas e ignora espaços', () => {
+    expect(parseDateList('2026-10-12, 2026-10-10,2026-10-12', today)).toEqual(['2026-10-10', '2026-10-12']);
+  });
+  it('aceita hoje; rejeita passado', () => {
+    expect(parseDateList('2026-10-02', today)).toEqual(['2026-10-02']);
+    expect(() => parseDateList('2026-10-01,2026-10-10', today)).toThrow(/passado.*2026-10-01/);
+  });
+  it('rejeita formato errado e data inexistente', () => {
+    expect(() => parseDateList('10/10/2026', today)).toThrow(/inválida/);
+    expect(() => parseDateList('2026-02-30', '2026-01-01')).toThrow(/inválida.*2026-02-30/);
+    expect(() => parseDateList(' , ', today)).toThrow(/vazio/);
+  });
+  it('limita a quantidade', () => {
+    const many = Array.from({ length: 31 }, (_, i) => addDays(today, i)).join(',');
+    expect(() => parseDateList(many, today)).toThrow(/no máximo 30/);
   });
 });

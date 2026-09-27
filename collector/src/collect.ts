@@ -1,6 +1,6 @@
 import { parseArgs } from 'node:util';
 import { clickbus } from './sources/clickbus.js';
-import { addDays, defaultStartDate } from './time.js';
+import { addDays, defaultStartDate, parseDateList } from './time.js';
 import { formatSummary, loadLegs, runRound, shuffle, type Leg } from './runner.js';
 import { activeCooldown, COOLDOWN_HOURS, formatLocal } from './cooldown.js';
 import { loadEnv } from './env.js';
@@ -11,6 +11,8 @@ import type { LegQuery } from './types.js';
 const USAGE = `Uso:
   npm run collect -- --from salvador-ba --to catu-ba --date 2026-10-05
   npm run collect -- --legs all [--days 5] [--start AAAA-MM-DD]
+  npm run collect -- --legs all --dates 2026-10-10,2026-10-12
+  npm run collect -- --from salvador-ba --to catu-ba --dates 2026-10-10,2026-10-12
     (sem --start: começa hoje, ou amanhã se já passou das 20:00 em America/Bahia)
 Opções: --headed (janela visível)  --no-save (não grava output/)
         --offline (não usa o Supabase: trechos de config/legs.json, nada é gravado no banco)
@@ -26,7 +28,7 @@ async function main() {
   const { values: a } = parseArgs({
     options: {
       from: { type: 'string' }, to: { type: 'string' }, date: { type: 'string' },
-      legs: { type: 'string' }, days: { type: 'string' }, start: { type: 'string' },
+      legs: { type: 'string' }, days: { type: 'string' }, start: { type: 'string' }, dates: { type: 'string' },
       headed: { type: 'boolean', default: false },
       'no-save': { type: 'boolean', default: false },
       offline: { type: 'boolean', default: false },
@@ -50,11 +52,17 @@ async function main() {
   const store = a.offline ? null : Store.fromEnv();
   if (!store && !a.offline) console.warn('⚠ SUPABASE_URL/SUPABASE_SERVICE_ROLE_KEY ausentes: modo offline (nada é gravado).');
 
+  if (a.dates && (a.days || a.start || a.date)) {
+    throw new Error('--dates não combina com --days, --start ou --date');
+  }
+  // Validadas antes de abrir qualquer coisa: erro de digitação não gasta página.
+  const dateList = a.dates ? parseDateList(a.dates) : null;
+
   let queries: LegQuery[];
   if (a.legs) {
     if (a.legs !== 'all') throw new Error('--legs só aceita "all" por enquanto');
     const days = Number(a.days ?? 5);
-    if (!Number.isInteger(days) || days < 1 || days > 30) throw new Error('--days deve ser inteiro entre 1 e 30');
+    if (!dateList && (!Number.isInteger(days) || days < 1 || days > 30)) throw new Error('--days deve ser inteiro entre 1 e 30');
     let legs: Leg[];
     if (store) {
       const fromDb = await store.loadLegs(clickbus.name);
@@ -65,12 +73,19 @@ async function main() {
       legs = await loadLegs('legs'); // fallback offline
       console.log(`Trechos de config/legs.json (offline): ${legs.length}`);
     }
-    const start = a.start ?? a.date ?? defaultStartDate();
-    if (!/^\d{4}-\d{2}-\d{2}$/.test(start)) throw new Error('--start deve ser AAAA-MM-DD');
+    let dates: string[];
+    if (dateList) {
+      dates = dateList;
+    } else {
+      const start = a.start ?? a.date ?? defaultStartDate();
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(start)) throw new Error('--start deve ser AAAA-MM-DD');
+      dates = Array.from({ length: days }, (_, d) => addDays(start, d));
+    }
     // Data por fora, trecho por dentro: se bloquear, as datas mais próximas já foram coletadas.
     // Ordem dos trechos sorteada a cada dia, para a rodada não repetir sempre a mesma sequência.
-    queries = Array.from({ length: days }, (_, d) => addDays(start, d))
-      .flatMap((date) => shuffle(legs).map((l) => ({ ...l, date })));
+    queries = dates.flatMap((date) => shuffle(legs).map((l) => ({ ...l, date })));
+  } else if (a.from && a.to && dateList) {
+    queries = dateList.map((date) => ({ from: a.from!, to: a.to!, date }));
   } else if (a.from && a.to && a.date) {
     if (!/^\d{4}-\d{2}-\d{2}$/.test(a.date)) throw new Error('--date deve ser AAAA-MM-DD');
     queries = [{ from: a.from, to: a.to, date: a.date }];

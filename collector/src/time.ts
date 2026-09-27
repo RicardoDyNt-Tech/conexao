@@ -55,3 +55,20 @@ export function defaultStartDate(now: Date = new Date(), tz: string = SOURCE_TZ,
   const today = todayIn(tz, now);
   return hourIn(tz, now) >= cutoffHour ? addDays(today, 1) : today;
 }
+
+/**
+ * `--dates 2026-10-10,2026-10-12` → datas válidas, sem repetição, em ordem crescente
+ * (as mais próximas primeiro, como na janela). Rejeita data inexistente ou no passado.
+ */
+export function parseDateList(list: string, today: string = todayIn(), max = 30): string[] {
+  const dates = [...new Set(list.split(',').map((d) => d.trim()).filter(Boolean))].sort();
+  if (!dates.length) throw new Error('--dates vazio (use AAAA-MM-DD,AAAA-MM-DD)');
+  if (dates.length > max) throw new Error(`--dates aceita no máximo ${max} datas`);
+  for (const d of dates) {
+    // Date.UTC normaliza 2026-02-30 para março: a volta para texto denuncia a data inexistente.
+    const valid = /^\d{4}-\d{2}-\d{2}$/.test(d) && addDays(d, 0) === d;
+    if (!valid) throw new Error(`data inválida em --dates: "${d}" (use AAAA-MM-DD)`);
+    if (d < today) throw new Error(`data no passado em --dates: ${d}`);
+  }
+  return dates;
+}
