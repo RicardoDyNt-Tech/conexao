@@ -252,6 +252,24 @@ Conclusões (com os arquivos de `/search/` analisados):
 - Preço de vitrine do QP = `originalPrice` da ClickBus no mesmo ônibus (ex.: Salvador → Catu convencional R$ 32,29); a ClickBus às vezes mostra preço promocional menor (ClickOferta).
 - Tokens: a URL de `/search-connections/` e o campo `tag` trazem JWT embrulhado em base64. O spike oculta os dois (`<jwt>`) antes de gravar.
 
+### ✅ 1ª coleta real pelo QP (8 trechos × 2 datas, sem bloqueio)
+`npm run collect -- --source queropassagem --legs all --dates 2026-10-10,2026-10-12`: 16 páginas + home, tudo `ok` exceto 1 `empty`.
+
+| Trecho | sáb 10/10 | seg 12/10 |
+|---|---|---|
+| Feira → Salvador | 23 | 27 |
+| Salvador → Catu | 24 | 24 |
+| Feira → Alagoinhas | **1** | **1** |
+| Alagoinhas → Catu | 16 | 15 |
+| Catu → Salvador | 11 | 11 |
+| Salvador → Feira | 28 | 29 |
+| Catu → Alagoinhas | 12 | 10 |
+| Alagoinhas → Feira | **1** | **0** |
+
+- Contagens já sem duplicatas entre GDS (Feira → Salvador: 27 itens brutos no spike → 23 viagens).
+- **Feira → Alagoinhas aparece no sábado e na segunda no QP**; na ClickBus (semana de 27/09) só na terça. Grade diferente entre os sites ou mudança de horário: acompanhar.
+- **Alagoinhas → Feira vazio na segunda 12/10** (na ClickBus havia às segundas). Sem "próxima data" no QP (ele não sugere outra data como a ClickBus).
+
 ### 🎯 Achado importante: o Quero Passagem vende Feira → Catu COM CONEXÃO
 Segunda, 05/10/2026, 3 opções (todas com "1 conexão", vendidas como uma compra só):
 
