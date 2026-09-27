@@ -4,6 +4,7 @@ import { addDays, defaultStartDate } from './time.js';
 import { formatSummary, loadLegs, runRound, type Leg } from './runner.js';
 import { loadEnv } from './env.js';
 import { Store } from './store.js';
+import { blockedMessage, makeNotifier, roundFailedMessage, roundProblemsMessage, telegramFromEnv } from './notify/telegram.js';
 import type { LegQuery } from './types.js';
 
 const USAGE = `Uso:
@@ -11,7 +12,13 @@ const USAGE = `Uso:
   npm run collect -- --legs all --days 7 [--start AAAA-MM-DD]
     (sem --start: começa hoje, ou amanhã se já passou das 20:00 em America/Bahia)
 Opções: --headed (janela visível)  --no-save (não grava output/)
-        --offline (não usa o Supabase: trechos de config/legs.json, nada é gravado no banco)`;
+        --offline (não usa o Supabase: trechos de config/legs.json, nada é gravado no banco)
+        --notify  (rodada agendada: resumo no Telegram se houver erro/bloqueio)
+Bloqueio é avisado no Telegram sempre que o bot estiver configurado.`;
+
+const roundLabel = () =>
+  `rodada das ${new Date().toLocaleTimeString('pt-BR', { timeZone: 'America/Bahia', hour: '2-digit', minute: '2-digit' })}`;
+let failureLabel: string | null = null; // preenchido com --notify: avisa se a rodada inteira falhar
 
 async function main() {
   const { values: a } = parseArgs({
@@ -21,12 +28,16 @@ async function main() {
       headed: { type: 'boolean', default: false },
       'no-save': { type: 'boolean', default: false },
       offline: { type: 'boolean', default: false },
+      notify: { type: 'boolean', default: false },
       help: { type: 'boolean', default: false },
     },
   });
   if (a.help) return console.log(USAGE);
 
   loadEnv();
+  const notify = makeNotifier(telegramFromEnv());
+  const label = roundLabel();
+  if (a.notify) failureLabel = label;
   const store = a.offline ? null : Store.fromEnv();
   if (!store && !a.offline) console.warn('⚠ SUPABASE_URL/SUPABASE_SERVICE_ROLE_KEY ausentes: modo offline (nada é gravado).');
 
@@ -60,16 +71,28 @@ async function main() {
   }
 
   console.log(`${queries.length} página(s), modo ${a.headed ? 'janela' : 'headless'}\n`);
+  let dbFailures = 0;
   const results = await runRound(clickbus, queries, {
     headless: !a.headed,
     saveRaw: !a['no-save'],
-    onResult: store ? (r) => store.recordLeg(r) : undefined,
+    onResult: store ? async (r) => {
+      try { await store.recordLeg(r); } catch (e) { dbFailures++; throw e; }
+    } : undefined,
+    onBlocked: (r) => notify(blockedMessage(r)),
   });
   console.log(`\nResumo\n${formatSummary(results)}`);
+  if (a.notify) {
+    const msg = roundProblemsMessage(results, { label, dbFailures });
+    if (msg) await notify(msg).catch((e) => console.error(`⚠ Telegram: ${(e as Error).message}`));
+  }
   if (results.some((r) => r.status === 'blocked')) process.exitCode = 3;
 }
 
-main().catch((e) => {
+main().catch(async (e) => {
   console.error(`erro: ${(e as Error).message}`);
+  if (failureLabel) {
+    await makeNotifier(telegramFromEnv())(roundFailedMessage(failureLabel, e))
+      .catch((err) => console.error(`⚠ Telegram: ${(err as Error).message}`));
+  }
   process.exitCode = 1;
 });

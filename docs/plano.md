@@ -240,10 +240,10 @@ create table watched_dates (
 - [x] CLI: `npm run collect -- --legs all --days 7` e `--from salvador-ba --to catu-ba --date 2026-10-04`.
 
 ### Fase 2 — Banco e cruzamento (1–2 dias)
-- [ ] Migrations, seed (4 cidades + slugs + hubs), RLS/allowlist.
-- [ ] Coletor grava no Supabase (upsert + `price_history` + `leg_stats` + `collector_runs`).
-- [ ] `find_connections` e `find_second_legs` + testes dos casos de borda.
-- [ ] Validar 2 datas comparando com a busca manual nos sites.
+- [x] Migrations, seed (4 cidades + slugs + hubs), RLS/allowlist.
+- [x] Coletor grava no Supabase (upsert + `price_history` + `leg_stats` + `collector_runs`).
+- [x] `find_connections` e `find_second_legs` + testes dos casos de borda.
+- [x] Validar 2 datas comparando com a busca manual nos sites.
 
 ### Fase 3 — Agendamento (0,5 dia)
 - [ ] Agendador de Tarefas: 07:00 e 19:00, próximos 7 dias, 8 trechos.

@@ -1,5 +1,6 @@
-import { createClient, type SupabaseClient } from '@supabase/supabase-js';
-import type { LegResult } from './types.js';
+import { createClient, type RealtimeChannel, type SupabaseClient } from '@supabase/supabase-js';
+import WebSocket from 'ws';
+import type { LegQuery, LegResult } from './types.js';
 import type { Leg } from './runner.js';
 
 /** Acesso ao Supabase com a service_role (só no .env do PC; nunca no front). */
@@ -11,7 +12,11 @@ export class Store {
     const url = process.env.SUPABASE_URL;
     const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
     if (!url || !key) return null;
-    return new Store(createClient(url, key, { auth: { persistSession: false, autoRefreshToken: false } }));
+    return new Store(createClient(url, key, {
+      auth: { persistSession: false, autoRefreshToken: false },
+      // Node 20 não tem WebSocket nativo (o Realtime precisa dele).
+      realtime: { transport: WebSocket as never },
+    }));
   }
 
   /**
@@ -19,6 +24,11 @@ export class Store {
    * traduzidos para os slugs da fonte (city_source_ids).
    */
   async loadLegs(source: string): Promise<{ legs: Leg[]; warnings: string[] }> {
+    const { hubs, slugOf } = await this.routeContext(source);
+    return deriveLegs(hubs, slugOf, source);
+  }
+
+  async routeContext(source: string): Promise<{ hubs: RouteHub[]; slugOf: Map<number, string> }> {
     const [hubs, slugs] = await Promise.all([
       this.db.from('route_hubs').select('origin_city_id, dest_city_id, hub_city_id')
         .order('origin_city_id').order('dest_city_id').order('hub_city_id'),
@@ -27,7 +37,27 @@ export class Store {
     if (hubs.error) throw new Error(`route_hubs: ${hubs.error.message}`);
     if (slugs.error) throw new Error(`city_source_ids: ${slugs.error.message}`);
 
-    return deriveLegs(hubs.data, new Map(slugs.data.map((r) => [r.city_id, r.source_slug])), source);
+    return { hubs: hubs.data, slugOf: new Map(slugs.data.map((r) => [r.city_id, r.source_slug])) };
+  }
+
+  /** Pega o próximo pedido pendente (já marcado como running), ou null. */
+  async claimRequest(): Promise<CollectRequest | null> {
+    const { data, error } = await this.db.rpc('claim_collect_request');
+    if (error) throw new Error(`claim_collect_request: ${error.message}`);
+    return (data as CollectRequest[] | null)?.[0] ?? null;
+  }
+
+  async finishRequest(id: number, status: 'done' | 'error', error?: string): Promise<void> {
+    const { error: e } = await this.db.from('collect_requests')
+      .update({ status, error: error ?? null, done_at: new Date().toISOString() }).eq('id', id);
+    if (e) throw new Error(`collect_requests ${id}: ${e.message}`);
+  }
+
+  /** Avisa a cada insert em collect_requests (Realtime). `onStatus` recebe SUBSCRIBED/CHANNEL_ERROR/… */
+  subscribeRequests(onInsert: () => void, onStatus: (status: string) => void): RealtimeChannel {
+    return this.db.channel('collect_requests_inserts')
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'collect_requests' }, () => onInsert())
+      .subscribe((status) => onStatus(status));
   }
 
   /** Grava trips + collector_runs + leg_stats numa transação (função record_leg_result). */
@@ -49,6 +79,31 @@ export class Store {
 }
 
 export interface RouteHub { origin_city_id: number; dest_city_id: number; hub_city_id: number }
+
+export interface CollectRequest { id: number; origin_city_id: number; dest_city_id: number; travel_date: string }
+
+/**
+ * Páginas para atender um pedido "atualizar agora": a direta origem→destino e,
+ * para cada hub do par, origem→hub e hub→destino, todas na data pedida.
+ */
+export function legsForRequest(req: CollectRequest, hubs: RouteHub[], slugOf: Map<number, string>, source: string):
+  { legs: LegQuery[]; warnings: string[] } {
+  const pairs: Array<[number, number]> = [[req.origin_city_id, req.dest_city_id]];
+  for (const h of hubs) {
+    if (h.origin_city_id !== req.origin_city_id || h.dest_city_id !== req.dest_city_id) continue;
+    pairs.push([h.origin_city_id, h.hub_city_id], [h.hub_city_id, h.dest_city_id]);
+  }
+  const legs: LegQuery[] = [];
+  const warnings: string[] = [];
+  const seen = new Set<string>();
+  for (const [a, b] of pairs) {
+    const from = slugOf.get(a), to = slugOf.get(b);
+    if (!from || !to) { warnings.push(`sem slug ${source} para a cidade ${!from ? a : b}`); continue; }
+    const k = `${from}>${to}`;
+    if (!seen.has(k)) { seen.add(k); legs.push({ from, to, date: req.travel_date }); }
+  }
+  return { legs, warnings };
+}
 
 /** origem→hub e hub→destino de cada route_hub, sem repetir, em slugs da fonte. */
 export function deriveLegs(hubs: RouteHub[], slugOf: Map<number, string>, source: string):

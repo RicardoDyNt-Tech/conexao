@@ -1,6 +1,7 @@
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import { COLLECTOR_DIR, openBrowser } from './browser.js';
+import { withCollectorLock } from './lock.js';
 import type { LegQuery, LegResult, Source } from './types.js';
 
 export interface Leg { from: string; to: string }
@@ -14,6 +15,10 @@ export interface RoundOptions {
   log?: (msg: string) => void;
   /** Chamado após cada trecho (ex.: gravar no Supabase). Erro aqui não para a rodada. */
   onResult?: (r: LegResult) => Promise<void>;
+  /** Chamado assim que um trecho vem "blocked", antes de a rodada parar (ex.: Telegram). */
+  onBlocked?: (r: LegResult) => Promise<void>;
+  /** Pausa também antes da 1ª página (quando outra coleta acabou de rodar). */
+  pauseFirst?: boolean;
 }
 
 const OUTPUT_DIR = path.join(COLLECTOR_DIR, 'output');
@@ -29,6 +34,10 @@ export async function loadLegs(list: 'legs' | 'spike' = 'legs'): Promise<Leg[]> 
  * Falha de um trecho não para a rodada; bloqueio (captcha/403) para tudo.
  */
 export async function runRound(source: Source, queries: LegQuery[], opts: RoundOptions): Promise<RoundEntry[]> {
+  return withCollectorLock(() => runRoundLocked(source, queries, opts), { log: opts.log });
+}
+
+async function runRoundLocked(source: Source, queries: LegQuery[], opts: RoundOptions): Promise<RoundEntry[]> {
   const { minPauseMs = 8_000, maxPauseMs = 15_000, log = console.log } = opts;
   const results: RoundEntry[] = [];
   if (opts.saveRaw) await fs.mkdir(OUTPUT_DIR, { recursive: true });
@@ -37,7 +46,7 @@ export async function runRound(source: Source, queries: LegQuery[], opts: RoundO
   try {
     for (let i = 0; i < queries.length; i++) {
       const q = queries[i]!;
-      if (i > 0) {
+      if (i > 0 || opts.pauseFirst) {
         const pause = minPauseMs + Math.random() * (maxPauseMs - minPauseMs);
         log(`  … pausa de ${(pause / 1000).toFixed(1)} s`);
         await sleep(pause);
@@ -57,6 +66,7 @@ export async function runRound(source: Source, queries: LegQuery[], opts: RoundO
       }
       if (res.status === 'blocked') {
         log('  ⛔ bloqueio detectado: rodada interrompida (não insistir).');
+        if (opts.onBlocked) await opts.onBlocked(res).catch((e) => log(`  ⚠ falha ao avisar bloqueio: ${(e as Error).message}`));
         for (const rest of queries.slice(i + 1)) results.push({ source: source.name, ...rest, status: 'skipped' });
         break;
       }

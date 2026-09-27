@@ -7,3 +7,5 @@ collector/output/
 collector/dist/
 supabase/.temp/
 supabase/.branches/
+collector/.collector.lock
+collector/logs/

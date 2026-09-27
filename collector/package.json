@@ -7,19 +7,23 @@
     "spike": "tsx src/spike.ts",
     "collect": "tsx src/collect.ts",
     "test": "vitest run",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "worker": "tsx src/worker.ts",
+    "notify:test": "tsx src/notify-test.ts"
   },
   "engines": {
     "node": ">=20.12"
   },
   "devDependencies": {
     "@types/node": "^26.6.3",
+    "@types/ws": "^8.18.1",
     "tsx": "^4.23.15",
     "typescript": "^7.0.2",
     "vitest": "^5.0.2"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.117.2",
-    "playwright": "^1.63.0"
+    "playwright": "^1.63.0",
+    "ws": "^8.22.0"
   }
 }

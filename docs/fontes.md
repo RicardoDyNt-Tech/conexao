@@ -160,6 +160,19 @@ Achado na validação da Fase 2 (27/09/2026): feira→alagoinhas pedido para 26/
 - O formato exato de `alternativeDate` não está documentado; o coletor usa a data das viagens e só recorre a ele se não vier viagem nenhuma.
 - Fixture: `trips-feira-de-santana-todos_alagoinhas-ba_2026-09-27.json` (**sintética**, montada com a estrutura real; trocar pelo JSON real salvo em `collector/output/`).
 
+### Dias de operação observados (coleta de 7 dias, 27/09 a 03/10/2026)
+Validação da Fase 2: 56 páginas (8 trechos × 7 dias), **sem bloqueio**.
+
+| Trecho | Dias com viagem |
+|---|---|
+| Feira → Alagoinhas | **só terça** (29/09) |
+| Alagoinhas → Feira | seg, ter, qui e sáb |
+| Feira ⇄ Salvador, Salvador ⇄ Catu | todo dia |
+
+- Na prática, a **via Alagoinhas quase não existe na ida** (1 dia por semana); a via Salvador é a rota principal.
+- `find_connections` Feira → Catu em 29/09 trouxe opções pelas duas vias (ex.: 14:30 → 18:10, R$ 57,43), sem repetições dominadas.
+- Uma semana só: reavaliar com mais semanas de coleta (`leg_stats`).
+
 ### Mapeamento para a tabela `trips`
 
 | Campo do banco | Origem no JSON |
