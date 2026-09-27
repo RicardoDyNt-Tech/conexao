@@ -25,7 +25,7 @@ describe('mensagens do Telegram', () => {
       { label: 'rodada das 07:00' })!;
     expect(msg).toBe([
       '⚠️ Conexão: rodada das 07:00 com problemas',
-      '1 ok · 1 sem viagens · 1 com erro · 0 bloqueado',
+      'ClickBus: 1 ok · 1 sem viagens · 1 com erro · 0 bloqueado',
       'Erros:',
       '• salvador-ba → catu-ba (05/10): v6/trips não chegou em 30 s',
     ].join('\n'));
@@ -35,8 +35,27 @@ describe('mensagens do Telegram', () => {
     const msg = roundProblemsMessage(
       [ok('a', 'b'), blocked('feira-de-santana-todos', 'salvador-ba'), skipped('x', 'y'), skipped('y', 'z')],
       { label: 'rodada das 19:00' })!;
-    expect(msg).toContain('1 ok · 0 sem viagens · 0 com erro · 1 bloqueado · 2 não rodaram');
+    expect(msg).toContain('ClickBus: 1 ok · 0 sem viagens · 0 com erro · 1 bloqueado · 2 não rodaram');
     expect(msg).toContain('Bloqueio em feira-de-santana-todos → salvador-ba (05/10): rodada interrompida.');
+  });
+
+  it('duas fontes: identifica qual teve problema e qual está ok', () => {
+    const qp = (e: RoundEntry): RoundEntry => ({ ...e, source: 'queropassagem' });
+    const msg = roundProblemsMessage(
+      [ok('a', 'b'), empty('b', 'c'), qp(ok('x', 'y')), qp(blocked('salvador-ba', 'catu')), qp(skipped('c', 'd'))],
+      { label: 'rodada das 07:00' })!;
+    expect(msg.split('\n')).toEqual([
+      '⚠️ Conexão: rodada das 07:00 com problemas',
+      'ClickBus ok: 1 ok · 1 sem viagens',
+      'Quero Passagem: 1 ok · 0 sem viagens · 0 com erro · 1 bloqueado · 1 não rodaram',
+      'Bloqueio em salvador-ba → catu (05/10): rodada interrompida.',
+    ]);
+  });
+
+  it('fonte em quarentena aparece como "não rodou"', () => {
+    const msg = roundProblemsMessage([err('a', 'b', 'timeout')],
+      { label: 'rodada das 07:00', quarantined: [{ source: 'queropassagem', until: '19:00 de 03/10' }] })!;
+    expect(msg).toContain('Quero Passagem: em quarentena até 19:00 de 03/10 (não rodou).');
   });
 
   it('só falha de gravação no banco também avisa', () => {
@@ -52,15 +71,15 @@ describe('mensagens do Telegram', () => {
   });
 
   it('mensagem imediata de bloqueio: "bloqueado até HH:MM de DD/MM" (aviso único)', () => {
-    expect(blockedMessage({ from: 'salvador-ba', to: 'catu-ba', date: '2026-10-05', error: 'HTTP 403' },
+    expect(blockedMessage({ source: 'clickbus', from: 'salvador-ba', to: 'catu-ba', date: '2026-10-05', error: 'HTTP 403' },
       '19:00 de 03/10')).toBe([
       '⛔ Conexão: ClickBus bloqueou a coleta',
       'Trecho: salvador-ba → catu-ba (05/10)',
       'Motivo: HTTP 403',
-      'Bloqueado até 19:00 de 03/10: rodadas e pedidos ficam parados até lá. Sem novos avisos nesse período.',
+      'ClickBus bloqueado até 19:00 de 03/10: rodadas e pedidos nessa fonte ficam parados até lá (as outras fontes seguem). Sem novos avisos nesse período.',
     ].join('\n'));
-    expect(blockedMessage({ from: 'a', to: 'b', date: '2026-10-05' }, '19:00 de 03/10', 'atualização pedida no app'))
-      .toMatch(/^⛔ Conexão: ClickBus bloqueou a atualização pedida no app\n.*\nMotivo: não informado/);
+    expect(blockedMessage({ source: 'queropassagem', from: 'a', to: 'b', date: '2026-10-05' }, '19:00 de 03/10', 'atualização pedida no app'))
+      .toMatch(/^⛔ Conexão: Quero Passagem bloqueou a atualização pedida no app\n.*\nMotivo: não informado/);
   });
 
   it('falha da rodada inteira', () => {

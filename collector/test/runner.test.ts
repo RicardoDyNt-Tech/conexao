@@ -72,7 +72,7 @@ describe('runRound', () => {
     const r = await runRound(source, q(4), opts({ pageLimit: 100, onBlocked }));
     expect(r.map((e) => e.status)).toEqual(['ok', 'blocked', 'skipped', 'skipped']);
     expect(onBlocked).toHaveBeenCalledTimes(1);
-    expect(await activeQuarantine()).not.toBeNull();
+    expect(await activeQuarantine('fake')).not.toBeNull();
 
     const open = vi.fn(async () => fakeContext);
     const r2 = await runRound(source, q(2), opts({ pageLimit: 100, openContext: open, onBlocked }));
@@ -91,23 +91,31 @@ describe('runRound', () => {
   });
 
   it('--ignore-quarantine roda mesmo em quarentena e a encerra se não houver bloqueio', async () => {
-    await startQuarantine('teste', new Date());
+    await startQuarantine('fake', 'teste', new Date());
     const { source, opened } = fakeSource();
     const skipped = await runRound(source, q(1), opts({ pageLimit: 100 }));
     expect(skipped[0]!.status).toBe('skipped');
     const r = await runRound(source, q(2), opts({ pageLimit: 100, ignoreQuarantine: true }));
     expect(r.map((e) => e.status)).toEqual(['ok', 'ok']);
     expect(opened).toEqual(['home', 'o0>d0', 'o1>d1']);
-    expect(await activeQuarantine()).toBeNull();
+    expect(await activeQuarantine('fake')).toBeNull();
   });
 
   it('--ignore-quarantine com novo bloqueio: quarentena renovada', async () => {
-    const first = await startQuarantine('antiga', new Date(Date.now() - 3600_000));
+    const first = await startQuarantine('fake', 'antiga', new Date(Date.now() - 3600_000));
     const { source } = fakeSource(() => 'blocked');
     await runRound(source, q(2), opts({ pageLimit: 100, ignoreQuarantine: true }));
-    const now = await activeQuarantine();
+    const now = await activeQuarantine('fake');
     expect(now?.reason).not.toBe('antiga');
     expect(Date.parse(now!.until)).toBeGreaterThan(Date.parse(first.until));
+  });
+
+  it('quarentena é da fonte: outra fonte roda normalmente', async () => {
+    await startQuarantine('fake', 'bloqueio da fake');
+    const other = fakeSource(); other.source.name = 'outra';
+    const r = await runRound(other.source, q(2), opts({ pageLimit: 100 }));
+    expect(r.map((e) => e.status)).toEqual(['ok', 'ok']);
+    expect(other.opened).toEqual(['home', 'o0>d0', 'o1>d1']);
   });
 
   it('home bloqueada conta como bloqueio (nenhuma busca)', async () => {
@@ -119,6 +127,6 @@ describe('runRound', () => {
     expect(r[0]).toMatchObject({ error: 'página inicial: HTTP 403' });
     expect(onResult).toHaveBeenCalledTimes(1); // o bloqueio vai para collector_runs
     expect(opened).toEqual([]);
-    expect(await activeQuarantine()).not.toBeNull();
+    expect(await activeQuarantine('fake')).not.toBeNull();
   });
 });

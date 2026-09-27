@@ -1,5 +1,5 @@
 {
-  "_comment": "Temporário: na Fase 2 os trechos vêm do banco (cities, city_source_ids, route_hubs).",
+  "_comment": "Temporário/offline: na Fase 2+ os trechos vêm do banco (cities, city_source_ids, route_hubs). 'legs' = ClickBus; 'legs.queropassagem' = Quero Passagem.",
   "legs": [
     {
       "from": "feira-de-santana-todos",
@@ -70,5 +70,39 @@
       "to": "catu"
     }
   ],
-  "_comment_spikeQp": "Spike do Quero Passagem (Fase 5a): slugs do QP, iguais aos de city_source_ids."
+  "_comment_spikeQp": "Spike do Quero Passagem (Fase 5a): slugs do QP, iguais aos de city_source_ids.",
+  "legs.queropassagem": [
+    {
+      "from": "feira-de-santana-ba",
+      "to": "alagoinhas"
+    },
+    {
+      "from": "alagoinhas",
+      "to": "catu"
+    },
+    {
+      "from": "feira-de-santana-ba",
+      "to": "salvador-ba"
+    },
+    {
+      "from": "salvador-ba",
+      "to": "catu"
+    },
+    {
+      "from": "catu",
+      "to": "alagoinhas"
+    },
+    {
+      "from": "alagoinhas",
+      "to": "feira-de-santana-ba"
+    },
+    {
+      "from": "catu",
+      "to": "salvador-ba"
+    },
+    {
+      "from": "salvador-ba",
+      "to": "feira-de-santana-ba"
+    }
+  ]
 }

@@ -44,9 +44,12 @@ const MIN_PAGES_TO_START = 2;
 const OUTPUT_DIR = path.join(COLLECTOR_DIR, 'output');
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
-export async function loadLegs(list: 'legs' | 'spike' = 'legs'): Promise<Leg[]> {
+/** Trechos offline (config/legs.json) de uma fonte: "legs" = ClickBus, "legs.<fonte>" = outras. */
+export async function loadLegs(key: string = 'clickbus'): Promise<Leg[]> {
   const cfg = JSON.parse(await fs.readFile(path.join(COLLECTOR_DIR, 'config', 'legs.json'), 'utf8'));
-  return cfg[list] as Leg[];
+  const list = key === 'clickbus' || key === 'legs' ? cfg.legs : cfg[key] ?? cfg[`legs.${key}`];
+  if (!Array.isArray(list)) throw new Error(`config/legs.json sem trechos para "${key}"`);
+  return list as Leg[];
 }
 
 /** Pausa aleatória entre páginas (ajustada depois de um 403 com 8–15 s). */
@@ -80,11 +83,11 @@ async function runRoundLocked(source: Source, queries: LegQuery[], opts: RoundOp
   const results: RoundEntry[] = [];
 
   // Checado de novo dentro da trava: outra coleta pode ter sido bloqueada enquanto esperávamos.
-  const paused = await activeQuarantine();
+  const paused = await activeQuarantine(source.name);
   if (paused && opts.ignoreQuarantine) {
     log(`⚠ Quarentena até ${formatUntil(paused.until)} ignorada (--ignore-quarantine).`);
   } else if (paused) {
-    log(`⏸ Em pausa até ${formatUntil(paused.until)} por bloqueio (${paused.reason}). Nenhuma página aberta.`);
+    log(`⏸ ${source.name} em quarentena até ${formatUntil(paused.until)} (${paused.reason}). Nenhuma página aberta.`);
     return skippedAll(source, queries);
   }
   if (!queries.length) return results;
@@ -106,7 +109,7 @@ async function runRoundLocked(source: Source, queries: LegQuery[], opts: RoundOp
   if (opts.saveRaw) await fs.mkdir(OUTPUT_DIR, { recursive: true });
 
   const block = async (res: LegResult, rest: LegQuery[]) => {
-    const quarantine = await startQuarantine(`${res.from} → ${res.to}: ${res.error ?? 'bloqueio'}`);
+    const quarantine = await startQuarantine(source.name, `${res.from} → ${res.to}: ${res.error ?? 'bloqueio'}`);
     log(`  ⛔ bloqueio detectado: rodada interrompida; quarentena de ${QUARANTINE_HOURS} h (até ${formatUntil(quarantine.until)}).`);
     if (opts.onBlocked) await opts.onBlocked(res, quarantine).catch((e) => log(`  ⚠ falha ao avisar bloqueio: ${(e as Error).message}`));
     results.push(...skippedAll(source, rest));
@@ -167,7 +170,7 @@ async function runRoundLocked(source: Source, queries: LegQuery[], opts: RoundOp
   }
   if (paused && opts.ignoreQuarantine && !results.some((r) => r.status === 'blocked')
       && results.some((r) => r.status === 'ok' || r.status === 'empty')) {
-    await clearQuarantine();
+    await clearQuarantine(source.name);
     log('✓ Rodada sem bloqueio: quarentena encerrada.');
   }
   return results;
@@ -177,9 +180,9 @@ export function formatSummary(entries: RoundEntry[]): string {
   const rows = entries.map((e) => {
     const n = 'found' in e ? String(e.found) : '-';
     const err = ('error' in e && e.error) || ('detail' in e && e.detail) || ('reason' in e && e.reason) || '';
-    return [`${e.from} → ${e.to}`, e.date, e.status, n, err];
+    return [e.source, `${e.from} → ${e.to}`, e.date, e.status, n, err];
   });
-  const header = ['trecho', 'data', 'status', 'viagens', 'detalhe'];
+  const header = ['fonte', 'trecho', 'data', 'status', 'viagens', 'detalhe'];
   const widths = header.map((h, c) => Math.max(h.length, ...rows.map((r) => r[c]!.length)));
   const fmt = (r: string[]) => r.map((v, c) => v.padEnd(widths[c]!)).join('  ').trimEnd();
   return [fmt(header), widths.map((w) => '-'.repeat(w)).join('  '), ...rows.map(fmt)].join('\n');

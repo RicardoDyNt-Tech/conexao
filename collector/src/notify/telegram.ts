@@ -1,5 +1,6 @@
 import type { LegResult } from '../types.js';
 import type { RoundEntry } from '../runner.js';
+import { sourceLabel } from '../sources/index.js';
 
 const MAX_LEN = 4000;   // limite do Telegram é 4096
 const MAX_ITEMS = 5;    // itens listados por mensagem; o resto vira "e mais N"
@@ -63,13 +64,14 @@ function list(items: string[]): string[] {
  * Único aviso de um bloqueio: durante a quarentena, rodadas e pedidos são pulados em silêncio.
  * `until` já formatado (ex.: "01:15 de 03/10").
  */
-export function blockedMessage(r: Pick<LegResult, 'from' | 'to' | 'date' | 'error'>, until: string,
+export function blockedMessage(r: Pick<LegResult, 'source' | 'from' | 'to' | 'date' | 'error'>, until: string,
   context = 'coleta'): string {
   return [
-    `⛔ Conexão: ClickBus bloqueou a ${context}`,
+    `⛔ Conexão: ${sourceLabel(r.source)} bloqueou a ${context}`,
     `Trecho: ${legLabel(r)}`,
     `Motivo: ${r.error ?? 'não informado'}`,
-    `Bloqueado até ${until}: rodadas e pedidos ficam parados até lá. Sem novos avisos nesse período.`,
+    `${sourceLabel(r.source)} bloqueado até ${until}: rodadas e pedidos nessa fonte ficam parados até lá`
+      + ' (as outras fontes seguem). Sem novos avisos nesse período.',
   ].join('\n');
 }
 
@@ -84,25 +86,34 @@ export function budgetMessage(info: { limit: number; skipped: number }): string 
 export interface RoundMeta {
   label: string;          // ex.: "rodada das 07:00"
   dbFailures?: number;    // trechos que não conseguiram ser gravados no banco
+  /** Fontes que nem rodaram por estarem em quarentena. */
+  quarantined?: Array<{ source: string; until: string }>;
 }
 
-/** Resumo da rodada, ou null se não houve problema (nada a avisar). */
-export function roundProblemsMessage(entries: RoundEntry[], meta: RoundMeta): string | null {
+function sourceBlock(source: string, entries: RoundEntry[]): { problem: boolean; lines: string[] } {
   const count = (s: string) => entries.filter((e) => e.status === s).length;
   const errors = entries.filter((e) => e.status === 'error');
   const blocked = entries.filter((e) => e.status === 'blocked');
-  const dbFailures = meta.dbFailures ?? 0;
-  if (!errors.length && !blocked.length && !dbFailures) return null;
-
-  const lines = [
-    `⚠️ Conexão: ${meta.label} com problemas`,
-    `${count('ok')} ok · ${count('empty')} sem viagens · ${errors.length} com erro · ${blocked.length} bloqueado` +
-      (count('skipped') ? ` · ${count('skipped')} não rodaram` : ''),
-  ];
-  if (blocked.length) lines.push(`Bloqueio em ${legLabel(blocked[0]!)}: rodada interrompida.`);
-  if (errors.length) {
-    lines.push('Erros:', ...list(errors.map((e) => `${legLabel(e)}: ${'error' in e && e.error ? e.error : '?'}`)));
+  const label = sourceLabel(source);
+  if (!errors.length && !blocked.length) {
+    return { problem: false, lines: [`${label} ok: ${count('ok')} ok · ${count('empty')} sem viagens`] };
   }
+  const lines = [`${label}: ${count('ok')} ok · ${count('empty')} sem viagens · ${errors.length} com erro · ${blocked.length} bloqueado`
+    + (count('skipped') ? ` · ${count('skipped')} não rodaram` : '')];
+  if (blocked.length) lines.push(`Bloqueio em ${legLabel(blocked[0]!)}: rodada interrompida.`);
+  if (errors.length) lines.push('Erros:', ...list(errors.map((e) => `${legLabel(e)}: ${'error' in e && e.error ? e.error : '?'}`)));
+  return { problem: true, lines };
+}
+
+/** Resumo da rodada (por fonte), ou null se não houve problema (nada a avisar). */
+export function roundProblemsMessage(entries: RoundEntry[], meta: RoundMeta): string | null {
+  const sources = [...new Set(entries.map((e) => e.source))];
+  const blocks = sources.map((s) => sourceBlock(s, entries.filter((e) => e.source === s)));
+  const dbFailures = meta.dbFailures ?? 0;
+  if (!blocks.some((b) => b.problem) && !dbFailures) return null;
+
+  const lines = [`⚠️ Conexão: ${meta.label} com problemas`, ...blocks.flatMap((b) => b.lines)];
+  for (const q of meta.quarantined ?? []) lines.push(`${sourceLabel(q.source)}: em quarentena até ${q.until} (não rodou).`);
   if (dbFailures) lines.push(`Falha ao gravar no banco: ${dbFailures} trecho(s).`);
   return truncate(lines.join('\n'));
 }

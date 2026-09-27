@@ -1,16 +1,17 @@
 import { parseArgs } from 'node:util';
 import { loadEnv } from './env.js';
 import { blockedMessage, budgetMessage, makeNotifier, roundFailedMessage, telegramFromEnv } from './notify/telegram.js';
-import { runRound } from './runner.js';
+import { runRound, type RoundEntry } from './runner.js';
 import { activeQuarantine, formatUntil } from './quarantine.js';
 import { dailyPageLimit, pagesLeft } from './budget.js';
 import { todayIn } from './time.js';
-import { clickbus } from './sources/clickbus.js';
+import { SOURCES, sourceLabel } from './sources/index.js';
+import type { Source } from './types.js';
 import { legsForRequest, Store } from './store.js';
 
 // "Atualizar agora": atende os pedidos de collect_requests.
-//   npm run worker            → fica rodando (Realtime + polling a cada 60 s); durante a
-//                               quarentena de 24 h por bloqueio, não atende nada (pedidos ficam pending)
+//   npm run worker            → fica rodando (Realtime + polling a cada 60 s); coleta em todas as
+//                               fontes fora de quarentena (com todas em quarentena, pedidos ficam pending)
 //   npm run worker -- --once  → atende os pendentes e sai (usado pelo run-scheduled.ps1)
 
 const POLL_MS = 60_000;
@@ -18,23 +19,31 @@ const log = (m: string) => console.log(`[${new Date().toLocaleTimeString('pt-BR'
 
 type Notify = (text: string) => Promise<void>;
 
-let pausedLogged: string | null = null;
+const pausedLogged = new Map<string, string>();
 let budgetLogged: string | null = null;
 
+/** Fontes fora de quarentena agora (as outras ficam para depois; cada site tem a sua). */
+async function activeSources(): Promise<Source[]> {
+  const out: Source[] = [];
+  for (const s of SOURCES) {
+    const q = await activeQuarantine(s.name);
+    if (!q) { out.push(s); continue; }
+    if (pausedLogged.get(s.name) !== q.until) {
+      log(`⏸ ${sourceLabel(s.name)} em quarentena até ${formatUntil(q.until)}; pedidos seguem pelas outras fontes.`);
+      pausedLogged.set(s.name, q.until);
+    }
+  }
+  return out;
+}
+
 /**
- * Atende pedidos até a fila esvaziar. Durante a pausa por bloqueio não pega pedido nenhum
- * (eles ficam pending e são atendidos quando a pausa acabar).
+ * Atende pedidos até a fila esvaziar, em todas as fontes fora de quarentena. Com todas em
+ * quarentena (ou sem páginas no dia), não pega pedido nenhum: eles ficam pending.
  */
 async function processPending(store: Store, notify: Notify, headless: boolean): Promise<'idle' | 'paused'> {
   for (;;) {
-    const paused = await activeQuarantine();
-    if (paused) {
-      if (pausedLogged !== paused.until) {
-        log(`⏸ Em pausa até ${formatUntil(paused.until)} (quarentena por bloqueio); pedidos ficam na fila.`);
-        pausedLogged = paused.until;
-      }
-      return 'paused';
-    }
+    const sources = await activeSources();
+    if (!sources.length) return 'paused';
     const limit = dailyPageLimit();
     if ((await pagesLeft(limit)).left < 2) {
       if (budgetLogged !== todayIn()) {
@@ -45,37 +54,42 @@ async function processPending(store: Store, notify: Notify, headless: boolean): 
     }
     const req = await store.claimRequest();
     if (!req) return 'idle';
-    log(`Pedido #${req.id}: cidades ${req.origin_city_id} → ${req.dest_city_id}, ${req.travel_date}`);
+    log(`Pedido #${req.id}: cidades ${req.origin_city_id} → ${req.dest_city_id}, ${req.travel_date} · fontes: ${sources.map((x) => sourceLabel(x.name)).join(', ')}`);
     try {
-      const { hubs, slugOf } = await store.routeContext(clickbus.name);
-      const { legs, warnings } = legsForRequest(req, hubs, slugOf, clickbus.name);
-      warnings.forEach((w) => log(`⚠ ${w}`));
-      if (!legs.length) {
+      const results: RoundEntry[] = [];
+      for (const source of sources) {
+        const { hubs, slugOf } = await store.routeContext(source.name);
+        const { legs, warnings } = legsForRequest(req, hubs, slugOf, source.name);
+        warnings.forEach((w) => log(`⚠ ${w}`));
+        if (!legs.length) continue;
+        results.push(...await runRound(source, legs, {
+          headless,
+          saveRaw: false,
+          pauseFirst: true, // outra coleta pode ter acabado de rodar
+          log: (m) => log(m.trim()),
+          onResult: (r) => store.recordLeg(r),
+          onBlocked: (r, c) => notify(blockedMessage(r, formatUntil(c.until), 'atualização pedida no app')),
+          onBudgetExhausted: (info) => notify(budgetMessage(info)),
+        }));
+      }
+      if (!results.length) {
         await store.finishRequest(req.id, 'error', 'nenhum trecho para este par (sem slugs/hubs)');
         continue;
       }
-      const results = await runRound(clickbus, legs, {
-        headless,
-        saveRaw: false,
-        pauseFirst: true, // outra coleta pode ter acabado de rodar
-        log: (m) => log(m.trim()),
-        onResult: (r) => store.recordLeg(r),
-        onBlocked: (r, c) => notify(blockedMessage(r, formatUntil(c.until), 'atualização pedida no app')),
-        onBudgetExhausted: (info) => notify(budgetMessage(info)),
-      });
       if (results.every((r) => r.status === 'skipped')) {
-        // Pausa ou limite diário começou enquanto esperávamos a trava: devolve o pedido para a fila.
+        // Quarentena ou limite diário começou enquanto esperávamos a trava: devolve o pedido.
         await store.requeueRequest(req.id);
         return 'paused';
       }
-      const bad = results.filter((r) => r.status !== 'ok' && r.status !== 'empty');
+      // Pulado por quarentena de uma fonte não é erro do pedido: as outras fontes atenderam.
+      const bad = results.filter((r) => r.status === 'error' || r.status === 'blocked'
+        || (r.status === 'skipped' && 'reason' in r && r.reason));
       await store.finishRequest(req.id, bad.length ? 'error' : 'done',
         bad.length ? bad.map((r) => {
           const why = ('error' in r && r.error) || ('reason' in r && r.reason);
-          return `${r.from}→${r.to}: ${r.status}${why ? ` (${why})` : ''}`;
+          return `${sourceLabel(r.source)} ${r.from}→${r.to}: ${r.status}${why ? ` (${why})` : ''}`;
         }).join('; ') : undefined);
       log(`Pedido #${req.id}: ${bad.length ? 'error' : 'done'}`);
-      if (results.some((r) => r.status === 'blocked')) return 'paused';
     } catch (e) {
       log(`Pedido #${req.id} falhou: ${(e as Error).message}`);
       await store.finishRequest(req.id, 'error', (e as Error).message).catch(() => {});

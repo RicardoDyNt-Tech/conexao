@@ -1,11 +1,11 @@
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import { parseArgs } from 'node:util';
-import { COLLECTOR_DIR, openBrowser, stateFile } from './browser.js';
+import { COLLECTOR_DIR, openBrowser } from './browser.js';
 import { dailyPageLimit, takePage } from './budget.js';
 import { loadEnv } from './env.js';
 import { withCollectorLock } from './lock.js';
-import { activeQuarantine, formatUntil, startQuarantine } from './quarantine.js';
+import { activeQuarantine, formatUntil, quarantineFile, startQuarantine } from './quarantine.js';
 import { BLOCK_STATUSES } from './sources/blocking.js';
 import { QP_HOME } from './sources/queropassagem.js';
 import { captureLeg, OUT_ROOT, WAIT_MS, type LegReport } from './qp-capture.js';
@@ -18,7 +18,7 @@ import { captureLeg, OUT_ROOT, WAIT_MS, type LegReport } from './qp-capture.js';
 
 const PAUSE_MS = { min: 15_000, max: 30_000 };
 const HOME_WAIT_MS = { min: 4_000, max: 9_000 };
-const QP_QUARANTINE = () => stateFile('.quarantine.queropassagem.json'); // quarentena só do QP
+const QP_QUARANTINE = () => quarantineFile('queropassagem'); // quarentena só do QP
 
 const rand = (r: { min: number; max: number }) => r.min + Math.random() * (r.max - r.min);
 const sleep = (ms: number) => new Promise((res) => setTimeout(res, ms));
@@ -32,7 +32,7 @@ async function main() {
   if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) throw new Error('--date deve ser AAAA-MM-DD');
   loadEnv();
 
-  const q = await activeQuarantine(new Date(), QP_QUARANTINE());
+  const q = await activeQuarantine('queropassagem', new Date(), QP_QUARANTINE());
   if (q) {
     console.log(`⏸ Quero Passagem em quarentena até ${formatUntil(q.until)} (${q.reason}). Nada a fazer.`);
     return;
@@ -53,7 +53,7 @@ async function main() {
         console.log(`  ⚠ home falhou: ${e.message.split('\n')[0]}`); return null;
       });
       if (nav && BLOCK_STATUSES.has(nav.status())) {
-        const qq = await startQuarantine(`home: HTTP ${nav.status()}`, new Date(), QP_QUARANTINE());
+        const qq = await startQuarantine('queropassagem', `home: HTTP ${nav.status()}`, new Date(), QP_QUARANTINE());
         console.log(`  ⛔ home devolveu HTTP ${nav.status()}: parado. Quarentena do QP até ${formatUntil(qq.until)}.`);
         return;
       }
@@ -76,7 +76,7 @@ async function main() {
           + ` · cards no DOM ${r.domCards} · JSON-LD BusTrip ${r.jsonLdBusTrips}`
           + (r.suspiciousMarker ? ` · marcador: ${r.suspiciousMarker}` : ''));
         if (r.status === 'blocked') {
-          const qq = await startQuarantine(`${from} → ${to}: ${r.detail ?? 'bloqueio'}`, new Date(), QP_QUARANTINE());
+          const qq = await startQuarantine('queropassagem', `${from} → ${to}: ${r.detail ?? 'bloqueio'}`, new Date(), QP_QUARANTINE());
           console.log(`  ⛔ bloqueio: spike interrompido (não insistir). Quarentena do QP até ${formatUntil(qq.until)}.`);
           break;
         }
