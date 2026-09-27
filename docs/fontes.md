@@ -292,6 +292,48 @@ Leitura:
 
 ---
 
+## 5c. Sites das viações: Rota e Cidade Sol (Venda Web da webrodoviaria)
+
+Nos nossos dados só existem 2 viações em todos os trechos: **Cidade Sol** e **Rota**. As duas vendem
+pela mesma plataforma, a **Venda Web** da webrodoviaria:
+
+| Viação | Raiz da Venda Web |
+|---|---|
+| Rota | `https://rotatransportes.webrodoviaria.com.br/VendaWebRotaTransportes/` |
+| Cidade Sol | `https://cidadedosol.webrodoviaria.com.br/VendaWebCidadeDoSol/` |
+
+### Busca manual no Chrome (27/09/2026, Salvador → Catu, 10/10/2026)
+- Os sites institucionais (`rotatransportes.com.br`, `cidadesol.com.br`) têm um formulário (origem,
+  destino, data) que leva para `.../consulta` da Venda Web. A URL de resultado **não tem
+  parâmetros**: a busca deve ser um POST ou guardar estado na sessão.
+- Nomes das cidades na plataforma: `SALVADOR - BA`, `CATU - BA`, `FEIRA DE SANTANA - BA`, `ALAGOINHAS - BA`.
+- Resultado: abas de data (08/10 a 12/10) e cards com saída, chegada, duração, classe
+  (CONVENCI/EXECUTIVO), preço e "Viagem sem Conexão". O botão "POLTRONAS" não abre sem login.
+- Sem captcha nem bloqueio. As duas dão **10% off na volta** comprando ida e volta juntas.
+
+| Viação | Saída → chegada | Classe | Preço no site da viação |
+|---|---|---|---|
+| Cidade Sol | 05:00 → 07:00 | Convencional | R$ 41,00 |
+| Cidade Sol | 05:10 → 06:35 | Convencional | R$ 36,00 |
+| Cidade Sol | 06:30 → 08:00 | Convencional | R$ 36,00 |
+| Cidade Sol | 07:00 → 08:30 | Executivo | R$ 48,00 |
+| Cidade Sol | 08:00 → 09:50 | Convencional | R$ 36,00 |
+| Rota | 06:00 → 07:20 | Convencional | R$ 45,80 |
+| Rota | 09:00 → 10:40 | Convencional | R$ 45,80 |
+
+Checkout exige login: não sabemos se há taxa no pagamento.
+
+### Spike (Fase 5c, Parte 1): `npm run spike:webrodoviaria` — ⏳ a rodar no PC
+Perguntas que o spike responde:
+1. A busca é POST de formulário, GET com parâmetros ou XHR? Quais campos vão (nomes, não valores)?
+2. A lista de viagens vem em JSON (XHR) ou só no HTML?
+3. As abas de data trocam por XHR na mesma página (dá para pegar 5 dias com 1 carregamento)?
+4. Existe id de viagem estável no HTML/JSON?
+
+Resultado: _preencher com a saída do spike._
+
+---
+
 ## 6. Próximos testes
 
 - [x] Capturar o endpoint de viagens (seção 3).

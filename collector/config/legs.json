@@ -104,5 +104,28 @@
       "from": "salvador-ba",
       "to": "feira-de-santana-ba"
     }
+  ],
+  "_comment_spikeWebrodoviaria": "Spike da Venda Web (Fase 5c): nomes das cidades como aparecem na plataforma; viacao = rota | cidadesol.",
+  "spikeWebrodoviaria": [
+    {
+      "viacao": "cidadesol",
+      "from": "SALVADOR - BA",
+      "to": "CATU - BA"
+    },
+    {
+      "viacao": "cidadesol",
+      "from": "FEIRA DE SANTANA - BA",
+      "to": "SALVADOR - BA"
+    },
+    {
+      "viacao": "rota",
+      "from": "FEIRA DE SANTANA - BA",
+      "to": "ALAGOINHAS - BA"
+    },
+    {
+      "viacao": "rota",
+      "from": "ALAGOINHAS - BA",
+      "to": "CATU - BA"
+    }
   ]
 }

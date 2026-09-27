@@ -29,6 +29,7 @@ Custo zero, sem LLM no runtime, nada da infraestrutura da AutoLabs.
 | Fase 4 — app PWA | ✅ no ar (`conexao.servorico.workers.dev`) |
 | Fase 5a — Quero Passagem como 2ª fonte | ✅ validada com coleta real (10/10 e 12/10) |
 | Fase 5b — datas monitoradas e alertas | ✅ código pronto e testado; **aplicação e teste real pendentes** |
+| Fase 5c — sites da Rota e da Cidade Sol como fontes | 🔄 Parte 1 (spike) pronta e ensaiada; **rodar no PC** |
 | Fase 5 — calendário de menor preço | ⏳ não começado |
 | Etapa 2 — qualquer rota | ⏳ depois |
 

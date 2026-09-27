@@ -109,6 +109,30 @@ npm run spike:qp -- --date 2026-10-12     # outra data
 - Bloqueio (HTTP 401/403/429, ou captcha sem nenhum resultado): para na hora e grava a
   quarentena **só do QP** (`.quarantine.queropassagem.json`, 24 h).
 
+## Spike da Venda Web: Rota e Cidade Sol (Fase 5c)
+
+```bash
+npm run spike:webrodoviaria                           # 4 trechos de config/legs.json ("spikeWebrodoviaria"), 2026-10-10, headless
+npm run spike:webrodoviaria -- --headed               # com janela (para ver o preenchimento)
+npm run spike:webrodoviaria -- --viacao rota          # só uma viação (rota | cidadesol)
+npm run spike:webrodoviaria -- --no-tab               # sem testar a aba do dia seguinte
+```
+
+- Mesmo Chrome, perfil, trava e teto diário do coletor. Por trecho: abre a raiz da Venda Web,
+  preenche origem/destino/data como um usuário (digita e clica na sugestão; `<select>` se for o caso)
+  e clica em "Pesquisar". **15–30 s entre carregamentos**, contando o tempo de preencher.
+- No 1º trecho de cada viação, clica na aba do dia seguinte para ver se troca por XHR ou navegação.
+- Páginas: 2 por trecho (raiz + resultado) + 1 por aba testada = **até 10** no total.
+- Grava em `output/webrodoviaria/<data>/<viação>_<origem>_<destino>/`: `steps.json` (cada passo do
+  preenchimento), `requests.json` (toda requisição: fase, tipo, método, URL, status, content-type,
+  tamanho, campos do POST), corpos de XHR/documento (`NNN_<fase>_<tipo>.json|html|xml`),
+  `forms.json`, `root.html`, `results.html`, `dom.json` (cards, abas, ids candidatos), prints.
+- Ocultados antes de gravar: ViewState, CSRF, `jsessionid`, tokens e JWT (`<token>`/`<jwt>`).
+  Cookies e headers não são gravados.
+- Sem sugestão de cidade: o trecho para com erro (nunca aperta Enter, que enviaria o formulário).
+- Bloqueio (HTTP 401/403/429, ou captcha sem formulário/cards): para na hora e grava quarentena de
+  24 h **da Rota e da Cidade Sol** (mesma plataforma).
+
 ## Fontes (Fase 5a)
 
 ```bash

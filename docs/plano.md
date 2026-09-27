@@ -260,6 +260,7 @@ create table watched_dates (
 - [x] Datas monitoradas + alertas de preço/assentos (Fase 5b): tela Alertas no app, coleta das datas monitoradas (`--watched`, até 30 dias), `npm run alerts` no fim da rodada diária. Preço-alvo avisa de novo só se ficar mais barato; assentos, uma vez por combinação.
 - [ ] Calendário de menor preço.
 - [x] 2ª fonte: Quero Passagem (Fase 5a, antecipada após o 403 da ClickBus): spike, parser, `--source`, quarentena por fonte, `trips_best`, app com as duas fontes. Conexões prontas do QP são gravadas (`parts_count` > 1) mas ficam fora do cruzamento.
+- [ ] Sites das viações (Rota e Cidade Sol, Venda Web da webrodoviaria) como fontes (Fase 5c): Parte 1 spike ⏳ · Parte 2 fonte `webrodoviaria.ts` · Parte 3 app (preços por fonte, nota dos 10% na volta) · Parte 4 coleta real.
 
 **Etapa 1: ~2–3 fins de semana.**
 
