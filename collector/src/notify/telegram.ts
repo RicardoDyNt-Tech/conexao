@@ -73,6 +73,14 @@ export function blockedMessage(r: Pick<LegResult, 'from' | 'to' | 'date' | 'erro
   ].join('\n');
 }
 
+/** Aviso (1× por dia) de que o teto diário de páginas foi atingido. */
+export function budgetMessage(info: { limit: number; skipped: number }): string {
+  return [
+    `📉 Conexão: limite diário de ${info.limit} páginas atingido`,
+    `${info.skipped} trecho(s) ficaram sem coletar. A contagem zera à meia-noite; pedidos do app ficam na fila.`,
+  ].join('\n');
+}
+
 export interface RoundMeta {
   label: string;          // ex.: "rodada das 07:00"
   dbFailures?: number;    // trechos que não conseguiram ser gravados no banco

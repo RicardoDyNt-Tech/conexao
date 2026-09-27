@@ -10,3 +10,4 @@ supabase/.branches/
 collector/.collector.lock
 collector/logs/
 collector/.cooldown.json
+collector/.page-budget.json

@@ -1,8 +1,6 @@
 import fs from 'node:fs/promises';
-import path from 'node:path';
-import { COLLECTOR_DIR } from './browser.js';
+import { stateFile } from './browser.js';
 
-const LOCK_FILE = path.join(COLLECTOR_DIR, '.collector.lock');
 const STALE_MS = 3 * 60 * 60_000; // trava mais velha que isso é resto de processo morto
 
 function alive(pid: number): boolean {
@@ -14,7 +12,7 @@ function alive(pid: number): boolean {
  * tempo (regra "nunca paralelizar") nem disputam o mesmo perfil do Chrome.
  */
 export async function withCollectorLock<T>(fn: () => Promise<T>,
-  { waitMs = 45 * 60_000, pollMs = 5_000, log = console.log, file = LOCK_FILE } = {}): Promise<T> {
+  { waitMs = 45 * 60_000, pollMs = 5_000, log = console.log, file = stateFile('.collector.lock') } = {}): Promise<T> {
   const deadline = Date.now() + waitMs;
   let warned = false;
   for (;;) {

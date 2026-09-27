@@ -5,7 +5,7 @@ import { formatSummary, loadLegs, runRound, shuffle, type Leg } from './runner.j
 import { activeCooldown, COOLDOWN_HOURS, formatLocal } from './cooldown.js';
 import { loadEnv } from './env.js';
 import { Store } from './store.js';
-import { blockedMessage, makeNotifier, roundFailedMessage, roundProblemsMessage, telegramFromEnv } from './notify/telegram.js';
+import { blockedMessage, budgetMessage, makeNotifier, roundFailedMessage, roundProblemsMessage, telegramFromEnv } from './notify/telegram.js';
 import type { LegQuery } from './types.js';
 
 const USAGE = `Uso:
@@ -15,7 +15,8 @@ const USAGE = `Uso:
 Opções: --headed (janela visível)  --no-save (não grava output/)
         --offline (não usa o Supabase: trechos de config/legs.json, nada é gravado no banco)
         --notify  (rodada agendada: resumo no Telegram se houver erro/bloqueio)
-Bloqueio é avisado no Telegram sempre que o bot estiver configurado, e pausa a coleta por 6 h.`;
+Bloqueio é avisado no Telegram sempre que o bot estiver configurado, e pausa a coleta por 6 h.
+Limite diário de páginas: DAILY_PAGE_LIMIT no .env (padrão 120); o que passar fica para o dia seguinte.`;
 
 const roundLabel = () =>
   `rodada das ${new Date().toLocaleTimeString('pt-BR', { timeZone: 'America/Bahia', hour: '2-digit', minute: '2-digit' })}`;
@@ -88,6 +89,7 @@ async function main() {
       try { await store.recordLeg(r); } catch (e) { dbFailures++; throw e; }
     } : undefined,
     onBlocked: (r, c) => notify(blockedMessage(r, formatLocal(c.until), COOLDOWN_HOURS)),
+    onBudgetExhausted: (info) => notify(budgetMessage(info)),
   });
   console.log(`\nResumo\n${formatSummary(results)}`);
   // Com bloqueio, o aviso imediato é a única mensagem (sem resumo em seguida).

@@ -1,8 +1,10 @@
 import { parseArgs } from 'node:util';
 import { loadEnv } from './env.js';
-import { blockedMessage, makeNotifier, roundFailedMessage, telegramFromEnv } from './notify/telegram.js';
+import { blockedMessage, budgetMessage, makeNotifier, roundFailedMessage, telegramFromEnv } from './notify/telegram.js';
 import { runRound } from './runner.js';
 import { activeCooldown, COOLDOWN_HOURS, formatLocal } from './cooldown.js';
+import { dailyPageLimit, pagesLeft } from './budget.js';
+import { todayIn } from './time.js';
 import { clickbus } from './sources/clickbus.js';
 import { legsForRequest, Store } from './store.js';
 
@@ -17,12 +19,13 @@ const log = (m: string) => console.log(`[${new Date().toLocaleTimeString('pt-BR'
 type Notify = (text: string) => Promise<void>;
 
 let pausedLogged: string | null = null;
+let budgetLogged: string | null = null;
 
 /**
  * Atende pedidos até a fila esvaziar. Durante a pausa por bloqueio não pega pedido nenhum
  * (eles ficam pending e são atendidos quando a pausa acabar).
  */
-async function processPending(store: Store, notify: Notify, headless: boolean): Promise<'idle' | 'blocked'> {
+async function processPending(store: Store, notify: Notify, headless: boolean): Promise<'idle' | 'paused'> {
   for (;;) {
     const paused = await activeCooldown();
     if (paused) {
@@ -30,7 +33,15 @@ async function processPending(store: Store, notify: Notify, headless: boolean): 
         log(`⏸ Em pausa até ${formatLocal(paused.until)} por bloqueio; pedidos ficam na fila.`);
         pausedLogged = paused.until;
       }
-      return 'blocked';
+      return 'paused';
+    }
+    const limit = dailyPageLimit();
+    if ((await pagesLeft(limit)).left < 2) {
+      if (budgetLogged !== todayIn()) {
+        log(`📉 Limite diário de ${limit} páginas atingido; pedidos ficam na fila até amanhã.`);
+        budgetLogged = todayIn();
+      }
+      return 'paused';
     }
     const req = await store.claimRequest();
     if (!req) return 'idle';
@@ -50,17 +61,21 @@ async function processPending(store: Store, notify: Notify, headless: boolean): 
         log: (m) => log(m.trim()),
         onResult: (r) => store.recordLeg(r),
         onBlocked: (r, c) => notify(blockedMessage(r, formatLocal(c.until), COOLDOWN_HOURS, 'atualização pedida no app')),
+        onBudgetExhausted: (info) => notify(budgetMessage(info)),
       });
       if (results.every((r) => r.status === 'skipped')) {
-        // A pausa começou enquanto esperávamos a trava: devolve o pedido para a fila.
+        // Pausa ou limite diário começou enquanto esperávamos a trava: devolve o pedido para a fila.
         await store.requeueRequest(req.id);
-        return 'blocked';
+        return 'paused';
       }
       const bad = results.filter((r) => r.status !== 'ok' && r.status !== 'empty');
       await store.finishRequest(req.id, bad.length ? 'error' : 'done',
-        bad.length ? bad.map((r) => `${r.from}→${r.to}: ${r.status}${'error' in r && r.error ? ` (${r.error})` : ''}`).join('; ') : undefined);
+        bad.length ? bad.map((r) => {
+          const why = ('error' in r && r.error) || ('reason' in r && r.reason);
+          return `${r.from}→${r.to}: ${r.status}${why ? ` (${why})` : ''}`;
+        }).join('; ') : undefined);
       log(`Pedido #${req.id}: ${bad.length ? 'error' : 'done'}`);
-      if (results.some((r) => r.status === 'blocked')) return 'blocked';
+      if (results.some((r) => r.status === 'blocked')) return 'paused';
     } catch (e) {
       log(`Pedido #${req.id} falhou: ${(e as Error).message}`);
       await store.finishRequest(req.id, 'error', (e as Error).message).catch(() => {});
@@ -94,7 +109,7 @@ async function main() {
       do {
         again = false;
         // Em pausa: sai e tenta de novo no próximo evento/polling (que também respeita a pausa).
-        if ((await processPending(store, notify, headless)) === 'blocked') return;
+        if ((await processPending(store, notify, headless)) === 'paused') return;
       } while (again);
     } catch (e) {
       log(`⚠ ${(e as Error).message}`); // falha de rede/banco: a próxima passada tenta de novo

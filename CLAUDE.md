@@ -17,7 +17,7 @@ Leia antes de qualquer tarefa: `docs/plano.md` e `docs/fontes.md`.
 - Se o site devolver bloqueio: **pausa de 6 h** (`collector/.cooldown.json`) sem abrir página nenhuma (rodadas e pedidos são pulados), com **um único** aviso no Telegram.
 - Uma página por vez, pausa aleatória de **15–30 s** entre páginas. Nunca paralelizar contra o mesmo site.
 - Cada rodada abre a home do site e espera alguns segundos antes da 1ª busca; a ordem dos trechos é sorteada a cada dia.
-- Uso pessoal e baixo volume (~150 páginas/dia no máximo; rodada agendada: 8 trechos × 5 dias = 40 páginas).
+- Uso pessoal e baixo volume: **teto de 120 páginas/dia** no coletor (`DAILY_PAGE_LIMIT`, contador em `collector/.page-budget.json`, zera à meia-noite de America/Bahia; conta rodadas, pedidos, spike e a home). Rodada agendada: 8 trechos × 5 dias = 40 páginas + home.
 
 ## Regras de design (para escalar sem reescrever)
 - Nada de "Feira", "Catu" etc. hardcoded no código: cidades, slugs e hubs vêm do banco (`cities`, `city_source_ids`, `route_hubs`).

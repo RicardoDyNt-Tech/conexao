@@ -1,10 +1,8 @@
 import fs from 'node:fs/promises';
-import path from 'node:path';
-import { COLLECTOR_DIR } from './browser.js';
+import { stateFile } from './browser.js';
 
 /** Depois de um bloqueio, nenhuma página é aberta por este tempo (rodadas e worker). */
 export const COOLDOWN_HOURS = 6;
-const COOLDOWN_FILE = path.join(COLLECTOR_DIR, '.cooldown.json');
 
 export interface Cooldown {
   until: string;      // ISO
@@ -16,7 +14,7 @@ export interface Cooldown {
  * Arquivo local (e não o banco): funciona mesmo com o Supabase fora do ar e é
  * checado antes de abrir o navegador. O bloqueio em si também fica em collector_runs.
  */
-export async function activeCooldown(now = new Date(), file = COOLDOWN_FILE): Promise<Cooldown | null> {
+export async function activeCooldown(now = new Date(), file = stateFile('.cooldown.json')): Promise<Cooldown | null> {
   let c: Cooldown;
   try {
     c = JSON.parse(await fs.readFile(file, 'utf8')) as Cooldown;
@@ -26,7 +24,7 @@ export async function activeCooldown(now = new Date(), file = COOLDOWN_FILE): Pr
   return Date.parse(c.until) > now.getTime() ? c : null;
 }
 
-export async function startCooldown(reason: string, now = new Date(), file = COOLDOWN_FILE,
+export async function startCooldown(reason: string, now = new Date(), file = stateFile('.cooldown.json'),
   hours = COOLDOWN_HOURS): Promise<Cooldown> {
   const c: Cooldown = { since: now.toISOString(), until: new Date(now.getTime() + hours * 3600_000).toISOString(), reason };
   await fs.writeFile(file, JSON.stringify(c, null, 2));

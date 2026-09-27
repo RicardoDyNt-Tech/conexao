@@ -103,3 +103,13 @@ describe('envio', () => {
     expect(warn).toHaveBeenCalledTimes(1);
   });
 });
+
+describe('aviso de limite diário', () => {
+  it('mensagem curta com quantos trechos ficaram de fora', async () => {
+    const { budgetMessage } = await import('../src/notify/telegram.js');
+    expect(budgetMessage({ limit: 120, skipped: 7 })).toBe([
+      '📉 Conexão: limite diário de 120 páginas atingido',
+      '7 trecho(s) ficaram sem coletar. A contagem zera à meia-noite; pedidos do app ficam na fila.',
+    ].join('\n'));
+  });
+});

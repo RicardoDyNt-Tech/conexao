@@ -22,6 +22,11 @@ npm run collect -- --legs all --days 3 --start 2026-10-05
 - Bloqueio (HTTP 401/403/429 ou página de captcha) interrompe a rodada (código de saída 3) e grava
   uma **pausa de 6 h** em `.cooldown.json`: até lá, `collect` e `worker` não abrem página nenhuma
   e não mandam novos avisos. Para encerrar a pausa antes (só se tiver certeza), apague o arquivo.
+- **Teto diário de páginas**: 120 por dia (`DAILY_PAGE_LIMIT` no `.env`), somando rodadas, pedidos,
+  spike e a home. Contador em `.page-budget.json`, zera à meia-noite (America/Bahia). Ao atingir,
+  a rodada para no ponto em que está (as datas mais próximas já foram coletadas), o resto vira
+  `skipped` e sai **um** aviso no Telegram por dia. Pedidos do app ficam `pending` até o dia seguinte.
+  Conta típica: 2 rodadas × 41 = 82 páginas, sobrando ~38 para pedidos e testes.
 - Trechos: vêm do banco (`route_hubs` → origem→hub e hub→destino, traduzidos por `city_source_ids`).
   `config/legs.json` é só fallback offline (`--offline` ou sem credenciais no `.env`).
 - Gravação: cada trecho × data chama `record_leg_result` no Supabase (upsert em `trips`,

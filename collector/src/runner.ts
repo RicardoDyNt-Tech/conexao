@@ -3,10 +3,14 @@ import path from 'node:path';
 import { COLLECTOR_DIR, openBrowser } from './browser.js';
 import { withCollectorLock } from './lock.js';
 import { activeCooldown, COOLDOWN_HOURS, formatLocal, startCooldown, type Cooldown } from './cooldown.js';
+import { claimBudgetNotice, dailyPageLimit, pagesLeft, takePage } from './budget.js';
+import type { BrowserContext } from 'playwright';
 import type { LegQuery, LegResult, Source } from './types.js';
 
 export interface Leg { from: string; to: string }
-export type RoundEntry = Omit<LegResult, 'raw'> | (LegQuery & { source: string; status: 'skipped' });
+export type RoundEntry = Omit<LegResult, 'raw'> | (LegQuery & { source: string; status: 'skipped'; reason?: string });
+
+export interface BudgetExhausted { limit: number; used: number; skipped: number }
 
 export interface RoundOptions {
   headless: boolean;
@@ -20,7 +24,16 @@ export interface RoundOptions {
   onBlocked?: (r: LegResult, cooldown: Cooldown) => Promise<void>;
   /** Pausa também antes da 1ª página (quando outra coleta acabou de rodar). */
   pauseFirst?: boolean;
+  /** Limite diário de páginas atingido (chamado no máximo 1× por dia, para o aviso). */
+  onBudgetExhausted?: (info: BudgetExhausted) => Promise<void>;
+  /** Padrão: DAILY_PAGE_LIMIT do .env ou 120. */
+  pageLimit?: number;
+  /** Só para testes: substitui a abertura do Chrome. */
+  openContext?: () => Promise<BrowserContext>;
 }
+
+/** Saldo mínimo para começar uma rodada: a home + pelo menos 1 busca. */
+const MIN_PAGES_TO_START = 2;
 
 const OUTPUT_DIR = path.join(COLLECTOR_DIR, 'output');
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
@@ -43,8 +56,9 @@ export function shuffle<T>(items: readonly T[], rng: () => number = Math.random)
   return a;
 }
 
-const skippedAll = (source: Source, qs: LegQuery[]): RoundEntry[] =>
-  qs.map((q) => ({ source: source.name, ...q, status: 'skipped' as const }));
+const skippedAll = (source: Source, qs: LegQuery[], reason?: string): RoundEntry[] =>
+  qs.map((q) => ({ source: source.name, ...q, status: 'skipped' as const, ...(reason ? { reason } : {}) }));
+const BUDGET_REASON = 'limite diário de páginas';
 
 /**
  * Uma página por vez, pausa aleatória entre páginas.
@@ -66,6 +80,21 @@ async function runRoundLocked(source: Source, queries: LegQuery[], opts: RoundOp
     return skippedAll(source, queries);
   }
   if (!queries.length) return results;
+
+  const limit = opts.pageLimit ?? dailyPageLimit();
+  const exhausted = async (rest: LegQuery[]) => {
+    const { used } = await pagesLeft(limit);
+    log(`  📉 limite diário de ${limit} páginas atingido (${used} usadas): ${rest.length} trecho(s) ficam para amanhã.`);
+    results.push(...skippedAll(source, rest, BUDGET_REASON));
+    if (opts.onBudgetExhausted && await claimBudgetNotice()) {
+      await opts.onBudgetExhausted({ limit, used, skipped: rest.length })
+        .catch((e) => log(`  ⚠ falha ao avisar limite: ${(e as Error).message}`));
+    }
+  };
+  if ((await pagesLeft(limit)).left < MIN_PAGES_TO_START) {
+    await exhausted(queries);
+    return results;
+  }
   if (opts.saveRaw) await fs.mkdir(OUTPUT_DIR, { recursive: true });
 
   const block = async (res: LegResult, rest: LegQuery[]) => {
@@ -75,10 +104,11 @@ async function runRoundLocked(source: Source, queries: LegQuery[], opts: RoundOp
     results.push(...skippedAll(source, rest));
   };
 
-  const context = await openBrowser({ headless: opts.headless });
+  const context = opts.openContext ? await opts.openContext() : await openBrowser({ headless: opts.headless });
   try {
     if (source.prepare) {
       log('→ página inicial');
+      await takePage(limit); // saldo garantido pelo MIN_PAGES_TO_START
       const prep = await source.prepare(context);
       if (prep.status === 'blocked') {
         const q = queries[0]!;
@@ -95,6 +125,10 @@ async function runRoundLocked(source: Source, queries: LegQuery[], opts: RoundOp
 
     for (let i = 0; i < queries.length; i++) {
       const q = queries[i]!;
+      if (!(await takePage(limit))) {
+        await exhausted(queries.slice(i));
+        break;
+      }
       if (i > 0 || opts.pauseFirst) {
         const pause = minPauseMs + Math.random() * (maxPauseMs - minPauseMs);
         log(`  … pausa de ${(pause / 1000).toFixed(1)} s`);
@@ -127,7 +161,7 @@ async function runRoundLocked(source: Source, queries: LegQuery[], opts: RoundOp
 export function formatSummary(entries: RoundEntry[]): string {
   const rows = entries.map((e) => {
     const n = 'found' in e ? String(e.found) : '-';
-    const err = ('error' in e && e.error) || ('detail' in e && e.detail) || '';
+    const err = ('error' in e && e.error) || ('detail' in e && e.detail) || ('reason' in e && e.reason) || '';
     return [`${e.from} → ${e.to}`, e.date, e.status, n, err];
   });
   const header = ['trecho', 'data', 'status', 'viagens', 'detalhe'];
