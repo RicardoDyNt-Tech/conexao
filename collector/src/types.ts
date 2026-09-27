@@ -49,6 +49,8 @@ export interface LegResult {
   warnings: string[];
   started_at: string;
   finished_at: string;
+  /** Rodada a que o trecho pertence (collector_runs.round_id; o app mostra a última rodada). */
+  round_id?: string;
 }
 
 export interface LegQuery {

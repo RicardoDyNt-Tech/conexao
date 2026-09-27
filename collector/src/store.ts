@@ -78,6 +78,7 @@ export class Store {
       p_trips: r.trips,
       p_error: r.error ?? null,
       p_detail: r.detail ?? null,
+      p_round_id: r.round_id ?? null,
       p_started_at: r.started_at,
       p_finished_at: r.finished_at,
     });

@@ -2,7 +2,7 @@ import { parseArgs } from 'node:util';
 import { clickbus } from './sources/clickbus.js';
 import { addDays, defaultStartDate, parseDateList } from './time.js';
 import { formatSummary, loadLegs, runRound, shuffle, type Leg } from './runner.js';
-import { activeCooldown, COOLDOWN_HOURS, formatLocal } from './cooldown.js';
+import { activeQuarantine, formatUntil } from './quarantine.js';
 import { loadEnv } from './env.js';
 import { Store } from './store.js';
 import { blockedMessage, budgetMessage, makeNotifier, roundFailedMessage, roundProblemsMessage, telegramFromEnv } from './notify/telegram.js';
@@ -17,7 +17,9 @@ const USAGE = `Uso:
 Opções: --headed (janela visível)  --no-save (não grava output/)
         --offline (não usa o Supabase: trechos de config/legs.json, nada é gravado no banco)
         --notify  (rodada agendada: resumo no Telegram se houver erro/bloqueio)
-Bloqueio é avisado no Telegram sempre que o bot estiver configurado, e pausa a coleta por 6 h.
+        --ignore-quarantine (uso manual consciente: roda mesmo em quarentena; se não houver
+                             bloqueio, a quarentena acaba)
+Bloqueio é avisado no Telegram (se configurado) e põe o coletor em quarentena por 24 h.
 Limite diário de páginas: DAILY_PAGE_LIMIT no .env (padrão 120); o que passar fica para o dia seguinte.`;
 
 const roundLabel = () =>
@@ -33,6 +35,7 @@ async function main() {
       'no-save': { type: 'boolean', default: false },
       offline: { type: 'boolean', default: false },
       notify: { type: 'boolean', default: false },
+      'ignore-quarantine': { type: 'boolean', default: false },
       help: { type: 'boolean', default: false },
     },
   });
@@ -42,10 +45,12 @@ async function main() {
   const notify = makeNotifier(telegramFromEnv());
   const label = roundLabel();
   if (a.notify) failureLabel = label;
-  const paused = await activeCooldown();
-  if (paused) {
+  const paused = await activeQuarantine();
+  if (paused && a['ignore-quarantine']) {
+    console.warn(`⚠ Quarentena até ${formatUntil(paused.until)} ignorada por --ignore-quarantine (${paused.reason}).`);
+  } else if (paused) {
     // Pausa por bloqueio: não abre páginas e não avisa de novo (o aviso saiu no bloqueio).
-    console.log(`⏸ Em pausa até ${formatLocal(paused.until)} por bloqueio (${paused.reason}). Nada a fazer.`);
+    console.log(`⏸ Em pausa até ${formatUntil(paused.until)} por bloqueio (${paused.reason}). Nada a fazer.`);
     return;
   }
 
@@ -103,8 +108,9 @@ async function main() {
     onResult: store ? async (r) => {
       try { await store.recordLeg(r); } catch (e) { dbFailures++; throw e; }
     } : undefined,
-    onBlocked: (r, c) => notify(blockedMessage(r, formatLocal(c.until), COOLDOWN_HOURS)),
+    onBlocked: (r, c) => notify(blockedMessage(r, formatUntil(c.until))),
     onBudgetExhausted: (info) => notify(budgetMessage(info)),
+    ignoreQuarantine: a['ignore-quarantine'],
   });
   console.log(`\nResumo\n${formatSummary(results)}`);
   // Com bloqueio, o aviso imediato é a única mensagem (sem resumo em seguida).

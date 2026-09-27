@@ -1,6 +1,6 @@
 ﻿# Rodada agendada do coletor (chamada pelo Agendador de Tarefas; ver install-task.ps1).
 # 1. Coleta os 8 trechos x 5 dias (npm run collect -- --legs all --days 5 --notify).
-#    Se houver pausa por bloqueio (6 h, collector\.cooldown.json), não abre página nenhuma.
+#    Em quarentena por bloqueio (24 h, collector\.quarantine.json), não abre página nenhuma.
 # 2. Atende os pedidos "atualizar agora" pendentes (npm run worker -- --once).
 # Log em collector\logs\AAAA-MM-DD_HHMM.log; mantém só os 30 mais recentes.
 $ErrorActionPreference = 'Continue'
@@ -28,7 +28,7 @@ $code = Invoke-Npm 'run collect -- --legs all --days 5 --notify'
 Write-Log "collect terminou com código $code"
 
 if ($code -eq 3) {
-  # Bloqueio: regra do CLAUDE.md, não insistir. Pausa de 6 h; os pedidos ficam na fila.
+  # Bloqueio: regra do CLAUDE.md, não insistir. Quarentena de 24 h; os pedidos ficam na fila.
   Write-Log 'Bloqueio detectado: pedidos pendentes não serão atendidos agora.'
 } else {
   $wcode = Invoke-Npm 'run worker -- --once'

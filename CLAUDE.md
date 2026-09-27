@@ -14,10 +14,10 @@ Leia antes de qualquer tarefa: `docs/plano.md` e `docs/fontes.md`.
 - A coleta usa **Playwright com o Chrome instalado** (`channel: 'chrome'`) e **perfil persistente**, abrindo **páginas públicas** de busca e **interceptando a resposta JSON que a própria página recebe** (ClickBus: `/web/api/v6/trips`).
 - **Nunca** forjar, gerar, reaproveitar ou copiar tokens/assinaturas anti-bot (`st-cb-px`, `fp-cb`, JWTs de busca etc.). Nunca chamar esses endpoints diretamente fora do navegador. Nunca tentar resolver captcha.
 - Se o site devolver captcha, 403 ou bloqueio: **parar a rodada**, registrar `status = 'blocked'` em `collector_runs`, avisar no Telegram. Não insistir.
-- Se o site devolver bloqueio: **pausa de 6 h** (`collector/.cooldown.json`) sem abrir página nenhuma (rodadas e pedidos são pulados), com **um único** aviso no Telegram.
+- Se o site devolver bloqueio: **quarentena de 24 h** (`collector/.quarantine.json`; o app deduz a mesma de `collector_runs`) sem abrir página nenhuma (rodadas e pedidos são pulados), com **um único** aviso no Telegram. `--ignore-quarantine` só para uso manual consciente.
 - Uma página por vez, pausa aleatória de **15–30 s** entre páginas. Nunca paralelizar contra o mesmo site.
 - Cada rodada abre a home do site e espera alguns segundos antes da 1ª busca; a ordem dos trechos é sorteada a cada dia.
-- Uso pessoal e baixo volume: **teto de 120 páginas/dia** no coletor (`DAILY_PAGE_LIMIT`, contador em `collector/.page-budget.json`, zera à meia-noite de America/Bahia; conta rodadas, pedidos, spike e a home). Rodada agendada: 8 trechos × 5 dias = 40 páginas + home.
+- Uso pessoal e baixo volume: **teto de 120 páginas/dia** no coletor (`DAILY_PAGE_LIMIT`, contador em `collector/.page-budget.json`, zera à meia-noite de America/Bahia; conta rodadas, pedidos, spike e a home). Rodada agendada: **1× por dia (07:00)**, 8 trechos × 5 dias = 40 páginas + home.
 
 ## Regras de design (para escalar sem reescrever)
 - Nada de "Feira", "Catu" etc. hardcoded no código: cidades, slugs e hubs vêm do banco (`cities`, `city_source_ids`, `route_hubs`).
@@ -34,4 +34,5 @@ Leia antes de qualquer tarefa: `docs/plano.md` e `docs/fontes.md`.
 ## Como trabalhar
 - Fase por fase, conforme `docs/plano.md`. Ao fim de cada fase, pare e mostre o resultado antes de seguir.
 - Mudanças pequenas, com testes. Explique decisões não óbvias em comentários curtos.
+- O app (`web/`) usa só a anon key + RLS e lê o banco via `find_connections`, `find_second_legs`, `date_coverage`, `collector_status` e selects simples.
 - Idioma: código e nomes em inglês; docs, mensagens de commit e explicações em português.

@@ -73,7 +73,7 @@
 
 ### Não funcionais
 - **Custo:** R$ 0.
-- **Coleta gentil:** 1 página por vez, 15–30 s de intervalo aleatório entre páginas, home do site antes da 1ª busca, ordem dos trechos sorteada, **2 rodadas por dia** (07:00 e 19:00) para os **próximos 5 dias** (~80 páginas/dia), mais os pedidos manuais e as datas monitoradas até 30 dias. Após um bloqueio: pausa de 6 h. Teto de 120 páginas/dia no coletor. *(Ajustado em 10/2026, depois de um 403 com ~100 páginas numa noite de testes com 8–15 s e 7 dias.)*
+- **Coleta gentil:** 1 página por vez, 15–30 s de intervalo aleatório entre páginas, home do site antes da 1ª busca, ordem dos trechos sorteada, **1 rodada por dia** (07:00) para os **próximos 5 dias** (~41 páginas/dia), mais os pedidos manuais e as datas monitoradas até 30 dias. Após um bloqueio: quarentena de 24 h. Teto de 120 páginas/dia no coletor. *(Ajustado em 10/2026, depois de um 403 com ~100 páginas numa noite de testes com 8–15 s e 7 dias.)*
 - **Resiliência:** a falha de um trecho não para a rodada; tudo fica registrado em `collector_runs`.
 - **Observabilidade:** Telegram avisa se uma rodada falhar ou se a ClickBus começar a devolver captcha/403.
 - **Busca no app:** < 2 s (lê só do banco).

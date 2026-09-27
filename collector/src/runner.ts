@@ -1,8 +1,9 @@
+import { randomUUID } from 'node:crypto';
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import { COLLECTOR_DIR, openBrowser } from './browser.js';
 import { withCollectorLock } from './lock.js';
-import { activeCooldown, COOLDOWN_HOURS, formatLocal, startCooldown, type Cooldown } from './cooldown.js';
+import { activeQuarantine, clearQuarantine, QUARANTINE_HOURS, formatUntil, startQuarantine, type Quarantine } from './quarantine.js';
 import { claimBudgetNotice, dailyPageLimit, pagesLeft, takePage } from './budget.js';
 import type { BrowserContext } from 'playwright';
 import type { LegQuery, LegResult, Source } from './types.js';
@@ -21,13 +22,18 @@ export interface RoundOptions {
   /** Chamado após cada trecho (ex.: gravar no Supabase). Erro aqui não para a rodada. */
   onResult?: (r: LegResult) => Promise<void>;
   /** Chamado assim que um trecho vem "blocked" (já com a pausa de 6 h gravada), antes de a rodada parar. */
-  onBlocked?: (r: LegResult, cooldown: Cooldown) => Promise<void>;
+  onBlocked?: (r: LegResult, quarantine: Quarantine) => Promise<void>;
   /** Pausa também antes da 1ª página (quando outra coleta acabou de rodar). */
   pauseFirst?: boolean;
   /** Limite diário de páginas atingido (chamado no máximo 1× por dia, para o aviso). */
   onBudgetExhausted?: (info: BudgetExhausted) => Promise<void>;
   /** Padrão: DAILY_PAGE_LIMIT do .env ou 120. */
   pageLimit?: number;
+  /**
+   * Uso manual consciente (collect --ignore-quarantine): roda mesmo em quarentena.
+   * Se a rodada der certo (sem bloqueio), a quarentena é encerrada.
+   */
+  ignoreQuarantine?: boolean;
   /** Só para testes: substitui a abertura do Chrome. */
   openContext?: () => Promise<BrowserContext>;
 }
@@ -74,9 +80,11 @@ async function runRoundLocked(source: Source, queries: LegQuery[], opts: RoundOp
   const results: RoundEntry[] = [];
 
   // Checado de novo dentro da trava: outra coleta pode ter sido bloqueada enquanto esperávamos.
-  const paused = await activeCooldown();
-  if (paused) {
-    log(`⏸ Em pausa até ${formatLocal(paused.until)} por bloqueio (${paused.reason}). Nenhuma página aberta.`);
+  const paused = await activeQuarantine();
+  if (paused && opts.ignoreQuarantine) {
+    log(`⚠ Quarentena até ${formatUntil(paused.until)} ignorada (--ignore-quarantine).`);
+  } else if (paused) {
+    log(`⏸ Em pausa até ${formatUntil(paused.until)} por bloqueio (${paused.reason}). Nenhuma página aberta.`);
     return skippedAll(source, queries);
   }
   if (!queries.length) return results;
@@ -98,12 +106,13 @@ async function runRoundLocked(source: Source, queries: LegQuery[], opts: RoundOp
   if (opts.saveRaw) await fs.mkdir(OUTPUT_DIR, { recursive: true });
 
   const block = async (res: LegResult, rest: LegQuery[]) => {
-    const cooldown = await startCooldown(`${res.from} → ${res.to}: ${res.error ?? 'bloqueio'}`);
-    log(`  ⛔ bloqueio detectado: rodada interrompida; pausa de ${COOLDOWN_HOURS} h (até ${formatLocal(cooldown.until)}).`);
-    if (opts.onBlocked) await opts.onBlocked(res, cooldown).catch((e) => log(`  ⚠ falha ao avisar bloqueio: ${(e as Error).message}`));
+    const quarantine = await startQuarantine(`${res.from} → ${res.to}: ${res.error ?? 'bloqueio'}`);
+    log(`  ⛔ bloqueio detectado: rodada interrompida; quarentena de ${QUARANTINE_HOURS} h (até ${formatUntil(quarantine.until)}).`);
+    if (opts.onBlocked) await opts.onBlocked(res, quarantine).catch((e) => log(`  ⚠ falha ao avisar bloqueio: ${(e as Error).message}`));
     results.push(...skippedAll(source, rest));
   };
 
+  const roundId = randomUUID();
   const context = opts.openContext ? await opts.openContext() : await openBrowser({ headless: opts.headless });
   try {
     if (source.prepare) {
@@ -114,7 +123,7 @@ async function runRoundLocked(source: Source, queries: LegQuery[], opts: RoundOp
         const q = queries[0]!;
         const now = new Date().toISOString();
         const res: LegResult = { source: source.name, ...q, status: 'blocked', trips: [], found: 0, warnings: [],
-          error: `página inicial: ${prep.error ?? 'bloqueio'}`, started_at: now, finished_at: now };
+          error: `página inicial: ${prep.error ?? 'bloqueio'}`, started_at: now, finished_at: now, round_id: roundId };
         results.push(res);
         if (opts.onResult) await opts.onResult(res).catch((e) => log(`  ⚠ falha ao gravar no banco: ${(e as Error).message}`));
         await block(res, queries.slice(1));
@@ -135,7 +144,8 @@ async function runRoundLocked(source: Source, queries: LegQuery[], opts: RoundOp
         await sleep(pause);
       }
       log(`→ ${q.from} → ${q.to} (${q.date})`);
-      const { raw, ...res } = await source.collect(context, q);
+      const { raw, ...collected } = await source.collect(context, q);
+      const res = { ...collected, round_id: roundId };
       results.push(res);
       log(`  ${res.status}${res.found ? `: ${res.found} viagens` : ''}${res.error ? ` — ${res.error}` : ''}${res.detail ? ` (${res.detail})` : ''}`);
       if (opts.onResult) {
@@ -154,6 +164,11 @@ async function runRoundLocked(source: Source, queries: LegQuery[], opts: RoundOp
     }
   } finally {
     await context.close();
+  }
+  if (paused && opts.ignoreQuarantine && !results.some((r) => r.status === 'blocked')
+      && results.some((r) => r.status === 'ok' || r.status === 'empty')) {
+    await clearQuarantine();
+    log('✓ Rodada sem bloqueio: quarentena encerrada.');
   }
   return results;
 }

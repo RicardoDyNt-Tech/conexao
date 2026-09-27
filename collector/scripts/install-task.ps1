@@ -1,11 +1,11 @@
-﻿# Registra no Agendador de Tarefas a rodada do coletor às 07:00 e às 19:00.
+﻿# Registra no Agendador de Tarefas a rodada diária do coletor (padrão: 07:00, 1x por dia).
 # - Só roda com o usuário logado (Chrome precisa da sessão do usuário).
 # - StartWhenAvailable: se o PC estava desligado no horário, roda assim que possível.
 # Uso (PowerShell normal, sem precisar de administrador):
 #   powershell -ExecutionPolicy Bypass -File .\scripts\install-task.ps1
 param(
   [string]$TaskName = 'Conexao - coletor',
-  [string[]]$Times = @('07:00', '19:00'),
+  [string[]]$Times = @('07:00'),
   # Atraso aleatório de até N minutos em cada horário (coleta mais "humana"). 0 desliga.
   [int]$RandomDelayMinutes = 10
 )

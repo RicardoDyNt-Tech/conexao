@@ -3,7 +3,7 @@ import os from 'node:os';
 import path from 'node:path';
 import type { BrowserContext } from 'playwright';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { activeCooldown } from '../src/cooldown.js';
+import { activeQuarantine, startQuarantine } from '../src/quarantine.js';
 import { pagesLeft } from '../src/budget.js';
 import { runRound, type RoundOptions } from '../src/runner.js';
 import type { LegQuery, LegResult, Source } from '../src/types.js';
@@ -66,13 +66,13 @@ describe('runRound', () => {
     expect(opened).toEqual(['home', 'o0>d0']);
   });
 
-  it('bloqueio para a rodada, grava a pausa de 6 h e a próxima rodada não abre nada', async () => {
+  it('bloqueio para a rodada, grava a quarentena e a próxima rodada não abre nada', async () => {
     const { source, opened } = fakeSource((x) => (x.from === 'o1' ? 'blocked' : 'ok'));
     const onBlocked = vi.fn(async () => {});
     const r = await runRound(source, q(4), opts({ pageLimit: 100, onBlocked }));
     expect(r.map((e) => e.status)).toEqual(['ok', 'blocked', 'skipped', 'skipped']);
     expect(onBlocked).toHaveBeenCalledTimes(1);
-    expect(await activeCooldown()).not.toBeNull();
+    expect(await activeQuarantine()).not.toBeNull();
 
     const open = vi.fn(async () => fakeContext);
     const r2 = await runRound(source, q(2), opts({ pageLimit: 100, openContext: open, onBlocked }));
@@ -80,6 +80,34 @@ describe('runRound', () => {
     expect(open).not.toHaveBeenCalled();
     expect(onBlocked).toHaveBeenCalledTimes(1); // aviso único
     expect(opened).toEqual(['home', 'o0>d0', 'o1>d1']);
+  });
+
+  it('todos os trechos da rodada levam o mesmo round_id', async () => {
+    const { source } = fakeSource();
+    const r = await runRound(source, q(3), opts({ pageLimit: 100 }));
+    const ids = new Set(r.map((e) => ('round_id' in e ? e.round_id : undefined)));
+    expect(ids.size).toBe(1);
+    expect([...ids][0]).toMatch(/^[0-9a-f-]{36}$/);
+  });
+
+  it('--ignore-quarantine roda mesmo em quarentena e a encerra se não houver bloqueio', async () => {
+    await startQuarantine('teste', new Date());
+    const { source, opened } = fakeSource();
+    const skipped = await runRound(source, q(1), opts({ pageLimit: 100 }));
+    expect(skipped[0]!.status).toBe('skipped');
+    const r = await runRound(source, q(2), opts({ pageLimit: 100, ignoreQuarantine: true }));
+    expect(r.map((e) => e.status)).toEqual(['ok', 'ok']);
+    expect(opened).toEqual(['home', 'o0>d0', 'o1>d1']);
+    expect(await activeQuarantine()).toBeNull();
+  });
+
+  it('--ignore-quarantine com novo bloqueio: quarentena renovada', async () => {
+    const first = await startQuarantine('antiga', new Date(Date.now() - 3600_000));
+    const { source } = fakeSource(() => 'blocked');
+    await runRound(source, q(2), opts({ pageLimit: 100, ignoreQuarantine: true }));
+    const now = await activeQuarantine();
+    expect(now?.reason).not.toBe('antiga');
+    expect(Date.parse(now!.until)).toBeGreaterThan(Date.parse(first.until));
   });
 
   it('home bloqueada conta como bloqueio (nenhuma busca)', async () => {
@@ -91,6 +119,6 @@ describe('runRound', () => {
     expect(r[0]).toMatchObject({ error: 'página inicial: HTTP 403' });
     expect(onResult).toHaveBeenCalledTimes(1); // o bloqueio vai para collector_runs
     expect(opened).toEqual([]);
-    expect(await activeCooldown()).not.toBeNull();
+    expect(await activeQuarantine()).not.toBeNull();
   });
 });

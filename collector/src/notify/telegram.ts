@@ -60,16 +60,16 @@ function list(items: string[]): string[] {
 }
 
 /**
- * Único aviso de um bloqueio: durante a pausa, rodadas e pedidos são pulados em silêncio.
- * `resumeAt` já formatado (ex.: "03/10 01:15").
+ * Único aviso de um bloqueio: durante a quarentena, rodadas e pedidos são pulados em silêncio.
+ * `until` já formatado (ex.: "01:15 de 03/10").
  */
-export function blockedMessage(r: Pick<LegResult, 'from' | 'to' | 'date' | 'error'>, resumeAt: string,
-  hours: number, context = 'coleta'): string {
+export function blockedMessage(r: Pick<LegResult, 'from' | 'to' | 'date' | 'error'>, until: string,
+  context = 'coleta'): string {
   return [
     `⛔ Conexão: ClickBus bloqueou a ${context}`,
     `Trecho: ${legLabel(r)}`,
     `Motivo: ${r.error ?? 'não informado'}`,
-    `Coleta e pedidos pausados por ${hours} h, até ${resumeAt}. Sem novos avisos nesse período.`,
+    `Bloqueado até ${until}: rodadas e pedidos ficam parados até lá. Sem novos avisos nesse período.`,
   ].join('\n');
 }
 

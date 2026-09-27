@@ -173,6 +173,13 @@ Validação da Fase 2: 56 páginas (8 trechos × 7 dias), **sem bloqueio**.
 - `find_connections` Feira → Catu em 29/09 trouxe opções pelas duas vias (ex.: 14:30 → 18:10, R$ 57,43), sem repetições dominadas.
 - Uma semana só: reavaliar com mais semanas de coleta (`leg_stats`).
 
+### 🚨 Incidente: IP bloqueado (403 no site inteiro) — início de outubro/2026
+- **Contexto:** noite de testes da Fase 3 com ~**100 páginas** (coletas manuais de 7 dias, pedidos e testes), pausas de 8–15 s, 2 rodadas/dia previstas.
+- **Sintoma:** a 1ª rodada agendada seguinte levou **HTTP 403 já na 1ª página**. O bloqueio é **no IP**: o site inteiro da ClickBus dá 403 **até no Chrome normal** do Ricardo, fora do coletor.
+- **Resposta:** o coletor parou corretamente (status `blocked`, aviso no Telegram). A tarefa agendada foi **desativada** (`Disable-ScheduledTask`) até o site voltar a abrir no Chrome normal.
+- **Ajustes feitos:** 15–30 s entre páginas; 1 rodada/dia (07:00) de 5 dias; teto de 120 páginas/dia; quarentena de 24 h após bloqueio; home antes da 1ª busca; ordem dos trechos sorteada. Nada de headers, cookies ou tokens.
+- **Lição:** o limite prático está bem abaixo das ~150 páginas/dia planejadas quando concentrado em poucas horas. Se voltar a bloquear com esses ajustes, reduzir volume ou reavaliar a fonte, não contornar.
+
 ### Mapeamento para a tabela `trips`
 
 | Campo do banco | Origem no JSON |

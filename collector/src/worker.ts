@@ -2,7 +2,7 @@ import { parseArgs } from 'node:util';
 import { loadEnv } from './env.js';
 import { blockedMessage, budgetMessage, makeNotifier, roundFailedMessage, telegramFromEnv } from './notify/telegram.js';
 import { runRound } from './runner.js';
-import { activeCooldown, COOLDOWN_HOURS, formatLocal } from './cooldown.js';
+import { activeQuarantine, formatUntil } from './quarantine.js';
 import { dailyPageLimit, pagesLeft } from './budget.js';
 import { todayIn } from './time.js';
 import { clickbus } from './sources/clickbus.js';
@@ -10,7 +10,7 @@ import { legsForRequest, Store } from './store.js';
 
 // "Atualizar agora": atende os pedidos de collect_requests.
 //   npm run worker            → fica rodando (Realtime + polling a cada 60 s); durante a
-//                               pausa de 6 h por bloqueio, não atende nada (pedidos ficam pending)
+//                               quarentena de 24 h por bloqueio, não atende nada (pedidos ficam pending)
 //   npm run worker -- --once  → atende os pendentes e sai (usado pelo run-scheduled.ps1)
 
 const POLL_MS = 60_000;
@@ -27,10 +27,10 @@ let budgetLogged: string | null = null;
  */
 async function processPending(store: Store, notify: Notify, headless: boolean): Promise<'idle' | 'paused'> {
   for (;;) {
-    const paused = await activeCooldown();
+    const paused = await activeQuarantine();
     if (paused) {
       if (pausedLogged !== paused.until) {
-        log(`⏸ Em pausa até ${formatLocal(paused.until)} por bloqueio; pedidos ficam na fila.`);
+        log(`⏸ Em pausa até ${formatUntil(paused.until)} (quarentena por bloqueio); pedidos ficam na fila.`);
         pausedLogged = paused.until;
       }
       return 'paused';
@@ -60,7 +60,7 @@ async function processPending(store: Store, notify: Notify, headless: boolean): 
         pauseFirst: true, // outra coleta pode ter acabado de rodar
         log: (m) => log(m.trim()),
         onResult: (r) => store.recordLeg(r),
-        onBlocked: (r, c) => notify(blockedMessage(r, formatLocal(c.until), COOLDOWN_HOURS, 'atualização pedida no app')),
+        onBlocked: (r, c) => notify(blockedMessage(r, formatUntil(c.until), 'atualização pedida no app')),
         onBudgetExhausted: (info) => notify(budgetMessage(info)),
       });
       if (results.every((r) => r.status === 'skipped')) {
