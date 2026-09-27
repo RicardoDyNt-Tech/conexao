@@ -1,0 +1,7 @@
+# Cloudflare Pages: o service worker e o manifest precisam ser revalidados a cada visita.
+/sw.js
+  Cache-Control: no-cache
+/manifest.webmanifest
+  Cache-Control: no-cache
+/index.html
+  Cache-Control: no-cache

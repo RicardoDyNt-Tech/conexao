@@ -251,8 +251,9 @@ create table watched_dates (
 - [x] Telegram: bot + aviso de falha/bloqueio (+ pausa de 6 h após bloqueio).
 
 ### Fase 4 — PWA (3–4 dias)
-- [ ] Buscar, Resultados, **Monte você mesmo**, Status.
-- [ ] Login, manifest, deploy no Cloudflare Pages, instalação nos dois Androids.
+- [x] Buscar, Resultados, **Monte você mesmo**, Status (web/, testes com Vitest + Testing Library).
+- [x] Login (magic link), manifest, service worker.
+- [ ] Deploy no Cloudflare Pages, URLs no Supabase, instalação nos dois Androids.
 - [ ] **Marco: MVP utilizável.** Usar numa viagem real.
 
 ### Fase 5 — Extras (2–3 dias)
