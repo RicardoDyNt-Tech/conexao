@@ -1,0 +1,1494 @@
+{
+    "trips": [
+        {
+            "type": "direct",
+            "price": 33.99,
+            "originalPrice": 37.9,
+            "isInstallmentFree": false,
+            "installmentFreeMinimumPrice": 0,
+            "maxInstallments": 4,
+            "duration": {
+                "hours": "2h 0m",
+                "days": 0
+            },
+            "isReservable": true,
+            "options": {
+                "isDiscountAvailable": false,
+                "hasGratuityCheckout": false,
+                "isGratuityTrip": false,
+                "hasWomanSpace": false
+            },
+            "tripChange": {
+                "isAvailable": false,
+                "hasFee": false
+            },
+            "isMultiTimezone": false,
+            "parts": [
+                {
+                    "tripId": "50114996-6fe0-3cc6-b536-35b0d735c85d",
+                    "price": 33.99,
+                    "duration": "2h 0m",
+                    "waitingTime": null,
+                    "departure": {
+                        "date": "2026-10-04",
+                        "time": "06:00:00",
+                        "city": "Salvador",
+                        "name": "Novo Terminal Rodoviário de Salvador",
+                        "state": "BA",
+                        "slug": "salvador-ba",
+                        "id": 3874
+                    },
+                    "arrival": {
+                        "date": "2026-10-04",
+                        "time": "08:00:00",
+                        "city": "Catu",
+                        "name": "Catu, BA",
+                        "state": "BA",
+                        "slug": "catu-ba",
+                        "id": 4680
+                    },
+                    "serviceClass": {
+                        "id": 1,
+                        "name": "Convencional",
+                        "isAntt": true
+                    },
+                    "travelCompany": {
+                        "name": "Cidade Sol",
+                        "logo": "https://static.clickbus.com/live/travel-company-logos/cidade-sol.svg",
+                        "slug": "cidade-sol"
+                    },
+                    "hasBoardingPass": true,
+                    "hasElectronicBoardingPass": true,
+                    "hasDigitalBoardingPass": true,
+                    "availableSeats": 38,
+                    "totalSeats": 42,
+                    "lowFareAvailableSeats": 8,
+                    "originalPrice": 37.9,
+                    "options": {
+                        "busFeatures": {
+                            "seatRecline": 122
+                        },
+                        "isInTransit": false,
+                        "hasWomanSpace": false
+                    },
+                    "hasTripItinerary": false,
+                    "isLowFare": true
+                }
+            ],
+            "isMergedTrips": false
+        },
+        {
+            "type": "direct",
+            "price": 28.99,
+            "originalPrice": 32.29,
+            "isInstallmentFree": false,
+            "installmentFreeMinimumPrice": 0,
+            "maxInstallments": 4,
+            "duration": {
+                "hours": "1h 50m",
+                "days": 0
+            },
+            "isReservable": true,
+            "options": {
+                "isDiscountAvailable": false,
+                "hasGratuityCheckout": false,
+                "isGratuityTrip": false,
+                "hasWomanSpace": false
+            },
+            "tripChange": {
+                "isAvailable": false,
+                "hasFee": false
+            },
+            "isMultiTimezone": false,
+            "parts": [
+                {
+                    "tripId": "c482f9eb-d971-387d-bfae-b705bcde3acf",
+                    "price": 28.99,
+                    "duration": "1h 50m",
+                    "waitingTime": null,
+                    "departure": {
+                        "date": "2026-10-04",
+                        "time": "08:00:00",
+                        "city": "Salvador",
+                        "name": "Novo Terminal Rodoviário de Salvador",
+                        "state": "BA",
+                        "slug": "salvador-ba",
+                        "id": 3874
+                    },
+                    "arrival": {
+                        "date": "2026-10-04",
+                        "time": "09:50:00",
+                        "city": "Catu",
+                        "name": "Catu, BA",
+                        "state": "BA",
+                        "slug": "catu-ba",
+                        "id": 4680
+                    },
+                    "serviceClass": {
+                        "id": 1,
+                        "name": "Convencional",
+                        "isAntt": true
+                    },
+                    "travelCompany": {
+                        "name": "Cidade Sol",
+                        "logo": "https://static.clickbus.com/live/travel-company-logos/cidade-sol.svg",
+                        "slug": "cidade-sol"
+                    },
+                    "hasBoardingPass": true,
+                    "hasElectronicBoardingPass": true,
+                    "hasDigitalBoardingPass": true,
+                    "availableSeats": 44,
+                    "totalSeats": 46,
+                    "lowFareAvailableSeats": 8,
+                    "originalPrice": 32.29,
+                    "options": {
+                        "busFeatures": {
+                            "seatRecline": 122
+                        },
+                        "isInTransit": false,
+                        "hasWomanSpace": false
+                    },
+                    "hasTripItinerary": false,
+                    "isLowFare": true
+                }
+            ],
+            "isMergedTrips": false
+        },
+        {
+            "type": "direct",
+            "price": 45.8,
+            "originalPrice": 45.8,
+            "isInstallmentFree": false,
+            "installmentFreeMinimumPrice": 0,
+            "maxInstallments": 4,
+            "duration": {
+                "hours": "1h 20m",
+                "days": 0
+            },
+            "isReservable": true,
+            "options": {
+                "isDiscountAvailable": true,
+                "hasGratuityCheckout": true,
+                "isGratuityTrip": false,
+                "hasWomanSpace": false
+            },
+            "tripChange": {
+                "isAvailable": false,
+                "hasFee": false
+            },
+            "isMultiTimezone": false,
+            "parts": [
+                {
+                    "tripId": "ba1bd9fe-9ac7-305f-bd91-2a7921f169ec",
+                    "price": 45.8,
+                    "duration": "1h 20m",
+                    "waitingTime": null,
+                    "departure": {
+                        "date": "2026-10-04",
+                        "time": "09:00:00",
+                        "city": "Salvador",
+                        "name": "Novo Terminal Rodoviário de Salvador",
+                        "state": "BA",
+                        "slug": "salvador-ba",
+                        "id": 3874
+                    },
+                    "arrival": {
+                        "date": "2026-10-04",
+                        "time": "10:20:00",
+                        "city": "Catu",
+                        "name": "Catu, BA",
+                        "state": "BA",
+                        "slug": "catu-ba",
+                        "id": 4680
+                    },
+                    "serviceClass": {
+                        "id": 2,
+                        "name": "Executivo",
+                        "isAntt": true
+                    },
+                    "travelCompany": {
+                        "name": "Rota Transportes",
+                        "logo": "https://static.clickbus.com/live/travel-company-logos/rota-transportes.svg",
+                        "slug": "rota-transportes"
+                    },
+                    "hasBoardingPass": true,
+                    "hasElectronicBoardingPass": true,
+                    "hasDigitalBoardingPass": true,
+                    "availableSeats": 41,
+                    "totalSeats": 42,
+                    "lowFareAvailableSeats": null,
+                    "originalPrice": 45.8,
+                    "options": {
+                        "busFeatures": {
+                            "airConditioning": true,
+                            "seatRecline": 130,
+                            "bathroom": true
+                        },
+                        "isInTransit": false,
+                        "hasWomanSpace": false
+                    },
+                    "hasTripItinerary": false,
+                    "isLowFare": false
+                }
+            ],
+            "isMergedTrips": false
+        },
+        {
+            "type": "direct",
+            "price": 28.99,
+            "originalPrice": 32.29,
+            "isInstallmentFree": false,
+            "installmentFreeMinimumPrice": 0,
+            "maxInstallments": 4,
+            "duration": {
+                "hours": "1h 40m",
+                "days": 0
+            },
+            "isReservable": true,
+            "options": {
+                "isDiscountAvailable": false,
+                "hasGratuityCheckout": false,
+                "isGratuityTrip": false,
+                "hasWomanSpace": false
+            },
+            "tripChange": {
+                "isAvailable": false,
+                "hasFee": false
+            },
+            "isMultiTimezone": false,
+            "parts": [
+                {
+                    "tripId": "80c0f799-ef3a-3674-9482-9cbb3478d821",
+                    "price": 28.99,
+                    "duration": "1h 40m",
+                    "waitingTime": null,
+                    "departure": {
+                        "date": "2026-10-04",
+                        "time": "09:30:00",
+                        "city": "Salvador",
+                        "name": "Novo Terminal Rodoviário de Salvador",
+                        "state": "BA",
+                        "slug": "salvador-ba",
+                        "id": 3874
+                    },
+                    "arrival": {
+                        "date": "2026-10-04",
+                        "time": "11:10:00",
+                        "city": "Catu",
+                        "name": "Catu, BA",
+                        "state": "BA",
+                        "slug": "catu-ba",
+                        "id": 4680
+                    },
+                    "serviceClass": {
+                        "id": 1,
+                        "name": "Convencional",
+                        "isAntt": true
+                    },
+                    "travelCompany": {
+                        "name": "Cidade Sol",
+                        "logo": "https://static.clickbus.com/live/travel-company-logos/cidade-sol.svg",
+                        "slug": "cidade-sol"
+                    },
+                    "hasBoardingPass": true,
+                    "hasElectronicBoardingPass": true,
+                    "hasDigitalBoardingPass": true,
+                    "availableSeats": 46,
+                    "totalSeats": 46,
+                    "lowFareAvailableSeats": 8,
+                    "originalPrice": 32.29,
+                    "options": {
+                        "busFeatures": {
+                            "seatRecline": 122
+                        },
+                        "isInTransit": false,
+                        "hasWomanSpace": false
+                    },
+                    "hasTripItinerary": false,
+                    "isLowFare": true
+                }
+            ],
+            "isMergedTrips": false
+        },
+        {
+            "type": "direct",
+            "price": 37.99,
+            "originalPrice": 42.54,
+            "isInstallmentFree": false,
+            "installmentFreeMinimumPrice": 0,
+            "maxInstallments": 4,
+            "duration": {
+                "hours": "1h 20m",
+                "days": 0
+            },
+            "isReservable": true,
+            "options": {
+                "isDiscountAvailable": false,
+                "hasGratuityCheckout": false,
+                "isGratuityTrip": false,
+                "hasWomanSpace": false
+            },
+            "tripChange": {
+                "isAvailable": false,
+                "hasFee": false
+            },
+            "isMultiTimezone": false,
+            "parts": [
+                {
+                    "tripId": "d38dddd4-9dc8-3a43-af63-221b20355dd4",
+                    "price": 37.99,
+                    "duration": "1h 20m",
+                    "waitingTime": null,
+                    "departure": {
+                        "date": "2026-10-04",
+                        "time": "10:30:00",
+                        "city": "Salvador",
+                        "name": "Novo Terminal Rodoviário de Salvador",
+                        "state": "BA",
+                        "slug": "salvador-ba",
+                        "id": 3874
+                    },
+                    "arrival": {
+                        "date": "2026-10-04",
+                        "time": "11:50:00",
+                        "city": "Catu",
+                        "name": "Catu, BA",
+                        "state": "BA",
+                        "slug": "catu-ba",
+                        "id": 4680
+                    },
+                    "serviceClass": {
+                        "id": 2,
+                        "name": "Executivo",
+                        "isAntt": true
+                    },
+                    "travelCompany": {
+                        "name": "Cidade Sol",
+                        "logo": "https://static.clickbus.com/live/travel-company-logos/cidade-sol.svg",
+                        "slug": "cidade-sol"
+                    },
+                    "hasBoardingPass": true,
+                    "hasElectronicBoardingPass": true,
+                    "hasDigitalBoardingPass": true,
+                    "availableSeats": 44,
+                    "totalSeats": 46,
+                    "lowFareAvailableSeats": 8,
+                    "originalPrice": 42.54,
+                    "options": {
+                        "busFeatures": {
+                            "airConditioning": true,
+                            "seatRecline": 130,
+                            "bathroom": true
+                        },
+                        "isInTransit": false,
+                        "hasWomanSpace": false
+                    },
+                    "hasTripItinerary": false,
+                    "isLowFare": true
+                }
+            ],
+            "isMergedTrips": false
+        },
+        {
+            "type": "direct",
+            "price": 26.99,
+            "originalPrice": 30.08,
+            "isInstallmentFree": false,
+            "installmentFreeMinimumPrice": 0,
+            "maxInstallments": 4,
+            "duration": {
+                "hours": "1h 25m",
+                "days": 0
+            },
+            "isReservable": true,
+            "options": {
+                "isDiscountAvailable": false,
+                "hasGratuityCheckout": false,
+                "isGratuityTrip": false,
+                "hasWomanSpace": false
+            },
+            "tripChange": {
+                "isAvailable": false,
+                "hasFee": false
+            },
+            "isMultiTimezone": false,
+            "parts": [
+                {
+                    "tripId": "b25900d3-51a8-3afa-b70e-955ba1f35926",
+                    "price": 26.99,
+                    "duration": "1h 25m",
+                    "waitingTime": null,
+                    "departure": {
+                        "date": "2026-10-04",
+                        "time": "11:00:00",
+                        "city": "Salvador",
+                        "name": "Novo Terminal Rodoviário de Salvador",
+                        "state": "BA",
+                        "slug": "salvador-ba",
+                        "id": 3874
+                    },
+                    "arrival": {
+                        "date": "2026-10-04",
+                        "time": "12:25:00",
+                        "city": "Catu",
+                        "name": "Catu, BA",
+                        "state": "BA",
+                        "slug": "catu-ba",
+                        "id": 4680
+                    },
+                    "serviceClass": {
+                        "id": 1,
+                        "name": "Convencional",
+                        "isAntt": true
+                    },
+                    "travelCompany": {
+                        "name": "Cidade Sol",
+                        "logo": "https://static.clickbus.com/live/travel-company-logos/cidade-sol.svg",
+                        "slug": "cidade-sol"
+                    },
+                    "hasBoardingPass": true,
+                    "hasElectronicBoardingPass": true,
+                    "hasDigitalBoardingPass": true,
+                    "availableSeats": 35,
+                    "totalSeats": 42,
+                    "lowFareAvailableSeats": 8,
+                    "originalPrice": 30.08,
+                    "options": {
+                        "busFeatures": {
+                            "seatRecline": 122
+                        },
+                        "isInTransit": false,
+                        "hasWomanSpace": false
+                    },
+                    "hasTripItinerary": false,
+                    "isLowFare": true
+                }
+            ],
+            "isMergedTrips": false
+        },
+        {
+            "type": "direct",
+            "price": 28.99,
+            "originalPrice": 32.54,
+            "isInstallmentFree": false,
+            "installmentFreeMinimumPrice": 0,
+            "maxInstallments": 4,
+            "duration": {
+                "hours": "1h 25m",
+                "days": 0
+            },
+            "isReservable": true,
+            "options": {
+                "isDiscountAvailable": false,
+                "hasGratuityCheckout": false,
+                "isGratuityTrip": false,
+                "hasWomanSpace": false
+            },
+            "tripChange": {
+                "isAvailable": false,
+                "hasFee": false
+            },
+            "isMultiTimezone": false,
+            "parts": [
+                {
+                    "tripId": "d3c31711-85f9-30b8-9fce-bc3db9b8639d",
+                    "price": 28.99,
+                    "duration": "1h 25m",
+                    "waitingTime": null,
+                    "departure": {
+                        "date": "2026-10-04",
+                        "time": "12:00:00",
+                        "city": "Salvador",
+                        "name": "Novo Terminal Rodoviário de Salvador",
+                        "state": "BA",
+                        "slug": "salvador-ba",
+                        "id": 3874
+                    },
+                    "arrival": {
+                        "date": "2026-10-04",
+                        "time": "13:25:00",
+                        "city": "Catu",
+                        "name": "Catu, BA",
+                        "state": "BA",
+                        "slug": "catu-ba",
+                        "id": 4680
+                    },
+                    "serviceClass": {
+                        "id": 1,
+                        "name": "Convencional",
+                        "isAntt": true
+                    },
+                    "travelCompany": {
+                        "name": "Cidade Sol",
+                        "logo": "https://static.clickbus.com/live/travel-company-logos/cidade-sol.svg",
+                        "slug": "cidade-sol"
+                    },
+                    "hasBoardingPass": true,
+                    "hasElectronicBoardingPass": true,
+                    "hasDigitalBoardingPass": true,
+                    "availableSeats": 46,
+                    "totalSeats": 46,
+                    "lowFareAvailableSeats": 8,
+                    "originalPrice": 32.54,
+                    "options": {
+                        "busFeatures": {
+                            "seatRecline": 122
+                        },
+                        "isInTransit": false,
+                        "hasWomanSpace": false
+                    },
+                    "hasTripItinerary": false,
+                    "isLowFare": true
+                }
+            ],
+            "isMergedTrips": false
+        },
+        {
+            "type": "direct",
+            "price": 37.99,
+            "originalPrice": 42.54,
+            "isInstallmentFree": false,
+            "installmentFreeMinimumPrice": 0,
+            "maxInstallments": 4,
+            "duration": {
+                "hours": "1h 0m",
+                "days": 0
+            },
+            "isReservable": true,
+            "options": {
+                "isDiscountAvailable": false,
+                "hasGratuityCheckout": false,
+                "isGratuityTrip": false,
+                "hasWomanSpace": false
+            },
+            "tripChange": {
+                "isAvailable": false,
+                "hasFee": false
+            },
+            "isMultiTimezone": false,
+            "parts": [
+                {
+                    "tripId": "1787843b-a0e1-3fff-9282-01f646359163",
+                    "price": 37.99,
+                    "duration": "1h 0m",
+                    "waitingTime": null,
+                    "departure": {
+                        "date": "2026-10-04",
+                        "time": "13:00:00",
+                        "city": "Salvador",
+                        "name": "Novo Terminal Rodoviário de Salvador",
+                        "state": "BA",
+                        "slug": "salvador-ba",
+                        "id": 3874
+                    },
+                    "arrival": {
+                        "date": "2026-10-04",
+                        "time": "14:00:00",
+                        "city": "Catu",
+                        "name": "Catu, BA",
+                        "state": "BA",
+                        "slug": "catu-ba",
+                        "id": 4680
+                    },
+                    "serviceClass": {
+                        "id": 2,
+                        "name": "Executivo",
+                        "isAntt": true
+                    },
+                    "travelCompany": {
+                        "name": "Cidade Sol",
+                        "logo": "https://static.clickbus.com/live/travel-company-logos/cidade-sol.svg",
+                        "slug": "cidade-sol"
+                    },
+                    "hasBoardingPass": true,
+                    "hasElectronicBoardingPass": true,
+                    "hasDigitalBoardingPass": true,
+                    "availableSeats": 46,
+                    "totalSeats": 46,
+                    "lowFareAvailableSeats": 8,
+                    "originalPrice": 42.54,
+                    "options": {
+                        "busFeatures": {
+                            "airConditioning": true,
+                            "seatRecline": 130,
+                            "bathroom": true
+                        },
+                        "isInTransit": false,
+                        "hasWomanSpace": false
+                    },
+                    "hasTripItinerary": false,
+                    "isLowFare": true
+                }
+            ],
+            "isMergedTrips": false
+        },
+        {
+            "type": "direct",
+            "price": 28.99,
+            "originalPrice": 32.29,
+            "isInstallmentFree": false,
+            "installmentFreeMinimumPrice": 0,
+            "maxInstallments": 4,
+            "duration": {
+                "hours": "1h 30m",
+                "days": 0
+            },
+            "isReservable": true,
+            "options": {
+                "isDiscountAvailable": false,
+                "hasGratuityCheckout": false,
+                "isGratuityTrip": false,
+                "hasWomanSpace": false
+            },
+            "tripChange": {
+                "isAvailable": false,
+                "hasFee": false
+            },
+            "isMultiTimezone": false,
+            "parts": [
+                {
+                    "tripId": "73247a76-0d41-3978-93e7-a880f0d1588e",
+                    "price": 28.99,
+                    "duration": "1h 30m",
+                    "waitingTime": null,
+                    "departure": {
+                        "date": "2026-10-04",
+                        "time": "14:00:00",
+                        "city": "Salvador",
+                        "name": "Novo Terminal Rodoviário de Salvador",
+                        "state": "BA",
+                        "slug": "salvador-ba",
+                        "id": 3874
+                    },
+                    "arrival": {
+                        "date": "2026-10-04",
+                        "time": "15:30:00",
+                        "city": "Catu",
+                        "name": "Catu, BA",
+                        "state": "BA",
+                        "slug": "catu-ba",
+                        "id": 4680
+                    },
+                    "serviceClass": {
+                        "id": 1,
+                        "name": "Convencional",
+                        "isAntt": true
+                    },
+                    "travelCompany": {
+                        "name": "Cidade Sol",
+                        "logo": "https://static.clickbus.com/live/travel-company-logos/cidade-sol.svg",
+                        "slug": "cidade-sol"
+                    },
+                    "hasBoardingPass": true,
+                    "hasElectronicBoardingPass": true,
+                    "hasDigitalBoardingPass": true,
+                    "availableSeats": 48,
+                    "totalSeats": 50,
+                    "lowFareAvailableSeats": 8,
+                    "originalPrice": 32.29,
+                    "options": {
+                        "busFeatures": {
+                            "seatRecline": 122
+                        },
+                        "isInTransit": false,
+                        "hasWomanSpace": false
+                    },
+                    "hasTripItinerary": false,
+                    "isLowFare": true
+                }
+            ],
+            "isMergedTrips": false
+        },
+        {
+            "type": "direct",
+            "price": 37.99,
+            "originalPrice": 42.54,
+            "isInstallmentFree": false,
+            "installmentFreeMinimumPrice": 0,
+            "maxInstallments": 4,
+            "duration": {
+                "hours": "1h 30m",
+                "days": 0
+            },
+            "isReservable": true,
+            "options": {
+                "isDiscountAvailable": false,
+                "hasGratuityCheckout": false,
+                "isGratuityTrip": false,
+                "hasWomanSpace": false
+            },
+            "tripChange": {
+                "isAvailable": false,
+                "hasFee": false
+            },
+            "isMultiTimezone": false,
+            "parts": [
+                {
+                    "tripId": "d2e63be2-e0f6-3e2b-b026-bf9f792ad4a1",
+                    "price": 37.99,
+                    "duration": "1h 30m",
+                    "waitingTime": null,
+                    "departure": {
+                        "date": "2026-10-04",
+                        "time": "14:30:00",
+                        "city": "Salvador",
+                        "name": "Novo Terminal Rodoviário de Salvador",
+                        "state": "BA",
+                        "slug": "salvador-ba",
+                        "id": 3874
+                    },
+                    "arrival": {
+                        "date": "2026-10-04",
+                        "time": "16:00:00",
+                        "city": "Catu",
+                        "name": "Catu, BA",
+                        "state": "BA",
+                        "slug": "catu-ba",
+                        "id": 4680
+                    },
+                    "serviceClass": {
+                        "id": 2,
+                        "name": "Executivo",
+                        "isAntt": true
+                    },
+                    "travelCompany": {
+                        "name": "Cidade Sol",
+                        "logo": "https://static.clickbus.com/live/travel-company-logos/cidade-sol.svg",
+                        "slug": "cidade-sol"
+                    },
+                    "hasBoardingPass": true,
+                    "hasElectronicBoardingPass": true,
+                    "hasDigitalBoardingPass": true,
+                    "availableSeats": 46,
+                    "totalSeats": 46,
+                    "lowFareAvailableSeats": 8,
+                    "originalPrice": 42.54,
+                    "options": {
+                        "busFeatures": {
+                            "airConditioning": true,
+                            "seatRecline": 130,
+                            "bathroom": true
+                        },
+                        "isInTransit": false,
+                        "hasWomanSpace": false
+                    },
+                    "hasTripItinerary": false,
+                    "isLowFare": true
+                }
+            ],
+            "isMergedTrips": false
+        },
+        {
+            "type": "direct",
+            "price": 37.99,
+            "originalPrice": 42.54,
+            "isInstallmentFree": false,
+            "installmentFreeMinimumPrice": 0,
+            "maxInstallments": 4,
+            "duration": {
+                "hours": "1h 0m",
+                "days": 0
+            },
+            "isReservable": true,
+            "options": {
+                "isDiscountAvailable": false,
+                "hasGratuityCheckout": false,
+                "isGratuityTrip": false,
+                "hasWomanSpace": false
+            },
+            "tripChange": {
+                "isAvailable": false,
+                "hasFee": false
+            },
+            "isMultiTimezone": false,
+            "parts": [
+                {
+                    "tripId": "6e4a5850-be84-3bb5-832c-4e0908c06e2f",
+                    "price": 37.99,
+                    "duration": "1h 0m",
+                    "waitingTime": null,
+                    "departure": {
+                        "date": "2026-10-04",
+                        "time": "15:30:00",
+                        "city": "Salvador",
+                        "name": "Novo Terminal Rodoviário de Salvador",
+                        "state": "BA",
+                        "slug": "salvador-ba",
+                        "id": 3874
+                    },
+                    "arrival": {
+                        "date": "2026-10-04",
+                        "time": "16:30:00",
+                        "city": "Catu",
+                        "name": "Catu, BA",
+                        "state": "BA",
+                        "slug": "catu-ba",
+                        "id": 4680
+                    },
+                    "serviceClass": {
+                        "id": 2,
+                        "name": "Executivo",
+                        "isAntt": true
+                    },
+                    "travelCompany": {
+                        "name": "Cidade Sol",
+                        "logo": "https://static.clickbus.com/live/travel-company-logos/cidade-sol.svg",
+                        "slug": "cidade-sol"
+                    },
+                    "hasBoardingPass": true,
+                    "hasElectronicBoardingPass": true,
+                    "hasDigitalBoardingPass": true,
+                    "availableSeats": 46,
+                    "totalSeats": 46,
+                    "lowFareAvailableSeats": 8,
+                    "originalPrice": 42.54,
+                    "options": {
+                        "busFeatures": {
+                            "airConditioning": true,
+                            "seatRecline": 130,
+                            "bathroom": true
+                        },
+                        "isInTransit": false,
+                        "hasWomanSpace": false
+                    },
+                    "hasTripItinerary": false,
+                    "isLowFare": true
+                }
+            ],
+            "isMergedTrips": false
+        },
+        {
+            "type": "direct",
+            "price": 28.99,
+            "originalPrice": 32.29,
+            "isInstallmentFree": false,
+            "installmentFreeMinimumPrice": 0,
+            "maxInstallments": 4,
+            "duration": {
+                "hours": "1h 30m",
+                "days": 0
+            },
+            "isReservable": true,
+            "options": {
+                "isDiscountAvailable": false,
+                "hasGratuityCheckout": false,
+                "isGratuityTrip": false,
+                "hasWomanSpace": false
+            },
+            "tripChange": {
+                "isAvailable": false,
+                "hasFee": false
+            },
+            "isMultiTimezone": false,
+            "parts": [
+                {
+                    "tripId": "8a1eaa1d-9c1e-3a5e-ba94-5d3eb812d576",
+                    "price": 28.99,
+                    "duration": "1h 30m",
+                    "waitingTime": null,
+                    "departure": {
+                        "date": "2026-10-04",
+                        "time": "16:20:00",
+                        "city": "Salvador",
+                        "name": "Novo Terminal Rodoviário de Salvador",
+                        "state": "BA",
+                        "slug": "salvador-ba",
+                        "id": 3874
+                    },
+                    "arrival": {
+                        "date": "2026-10-04",
+                        "time": "17:50:00",
+                        "city": "Catu",
+                        "name": "Catu, BA",
+                        "state": "BA",
+                        "slug": "catu-ba",
+                        "id": 4680
+                    },
+                    "serviceClass": {
+                        "id": 1,
+                        "name": "Convencional",
+                        "isAntt": true
+                    },
+                    "travelCompany": {
+                        "name": "Cidade Sol",
+                        "logo": "https://static.clickbus.com/live/travel-company-logos/cidade-sol.svg",
+                        "slug": "cidade-sol"
+                    },
+                    "hasBoardingPass": true,
+                    "hasElectronicBoardingPass": true,
+                    "hasDigitalBoardingPass": true,
+                    "availableSeats": 41,
+                    "totalSeats": 46,
+                    "lowFareAvailableSeats": 8,
+                    "originalPrice": 32.29,
+                    "options": {
+                        "busFeatures": {
+                            "seatRecline": 122
+                        },
+                        "isInTransit": false,
+                        "hasWomanSpace": false
+                    },
+                    "hasTripItinerary": false,
+                    "isLowFare": true
+                }
+            ],
+            "isMergedTrips": false
+        },
+        {
+            "type": "direct",
+            "price": 37.99,
+            "originalPrice": 42.54,
+            "isInstallmentFree": false,
+            "installmentFreeMinimumPrice": 0,
+            "maxInstallments": 4,
+            "duration": {
+                "hours": "1h 20m",
+                "days": 0
+            },
+            "isReservable": true,
+            "options": {
+                "isDiscountAvailable": false,
+                "hasGratuityCheckout": false,
+                "isGratuityTrip": false,
+                "hasWomanSpace": false
+            },
+            "tripChange": {
+                "isAvailable": false,
+                "hasFee": false
+            },
+            "isMultiTimezone": false,
+            "parts": [
+                {
+                    "tripId": "3284e7d3-d702-37de-b217-22f8342f2fc0",
+                    "price": 37.99,
+                    "duration": "1h 20m",
+                    "waitingTime": null,
+                    "departure": {
+                        "date": "2026-10-04",
+                        "time": "17:00:00",
+                        "city": "Salvador",
+                        "name": "Novo Terminal Rodoviário de Salvador",
+                        "state": "BA",
+                        "slug": "salvador-ba",
+                        "id": 3874
+                    },
+                    "arrival": {
+                        "date": "2026-10-04",
+                        "time": "18:20:00",
+                        "city": "Catu",
+                        "name": "Catu, BA",
+                        "state": "BA",
+                        "slug": "catu-ba",
+                        "id": 4680
+                    },
+                    "serviceClass": {
+                        "id": 2,
+                        "name": "Executivo",
+                        "isAntt": true
+                    },
+                    "travelCompany": {
+                        "name": "Cidade Sol",
+                        "logo": "https://static.clickbus.com/live/travel-company-logos/cidade-sol.svg",
+                        "slug": "cidade-sol"
+                    },
+                    "hasBoardingPass": true,
+                    "hasElectronicBoardingPass": true,
+                    "hasDigitalBoardingPass": true,
+                    "availableSeats": 46,
+                    "totalSeats": 46,
+                    "lowFareAvailableSeats": 8,
+                    "originalPrice": 42.54,
+                    "options": {
+                        "busFeatures": {
+                            "airConditioning": true,
+                            "seatRecline": 130,
+                            "bathroom": true
+                        },
+                        "isInTransit": false,
+                        "hasWomanSpace": false
+                    },
+                    "hasTripItinerary": false,
+                    "isLowFare": true
+                }
+            ],
+            "isMergedTrips": false
+        },
+        {
+            "type": "direct",
+            "price": 28.99,
+            "originalPrice": 32.29,
+            "isInstallmentFree": false,
+            "installmentFreeMinimumPrice": 0,
+            "maxInstallments": 4,
+            "duration": {
+                "hours": "1h 30m",
+                "days": 0
+            },
+            "isReservable": true,
+            "options": {
+                "isDiscountAvailable": false,
+                "hasGratuityCheckout": false,
+                "isGratuityTrip": false,
+                "hasWomanSpace": false
+            },
+            "tripChange": {
+                "isAvailable": false,
+                "hasFee": false
+            },
+            "isMultiTimezone": false,
+            "parts": [
+                {
+                    "tripId": "6d3a6c45-2774-311c-ade8-dc76977be32d",
+                    "price": 28.99,
+                    "duration": "1h 30m",
+                    "waitingTime": null,
+                    "departure": {
+                        "date": "2026-10-04",
+                        "time": "17:30:00",
+                        "city": "Salvador",
+                        "name": "Novo Terminal Rodoviário de Salvador",
+                        "state": "BA",
+                        "slug": "salvador-ba",
+                        "id": 3874
+                    },
+                    "arrival": {
+                        "date": "2026-10-04",
+                        "time": "19:00:00",
+                        "city": "Catu",
+                        "name": "Catu, BA",
+                        "state": "BA",
+                        "slug": "catu-ba",
+                        "id": 4680
+                    },
+                    "serviceClass": {
+                        "id": 1,
+                        "name": "Convencional",
+                        "isAntt": true
+                    },
+                    "travelCompany": {
+                        "name": "Cidade Sol",
+                        "logo": "https://static.clickbus.com/live/travel-company-logos/cidade-sol.svg",
+                        "slug": "cidade-sol"
+                    },
+                    "hasBoardingPass": true,
+                    "hasElectronicBoardingPass": true,
+                    "hasDigitalBoardingPass": true,
+                    "availableSeats": 44,
+                    "totalSeats": 46,
+                    "lowFareAvailableSeats": 8,
+                    "originalPrice": 32.29,
+                    "options": {
+                        "busFeatures": {
+                            "seatRecline": 122
+                        },
+                        "isInTransit": false,
+                        "hasWomanSpace": false
+                    },
+                    "hasTripItinerary": false,
+                    "isLowFare": true
+                }
+            ],
+            "isMergedTrips": false
+        },
+        {
+            "type": "direct",
+            "price": 37.99,
+            "originalPrice": 42.54,
+            "isInstallmentFree": false,
+            "installmentFreeMinimumPrice": 0,
+            "maxInstallments": 4,
+            "duration": {
+                "hours": "1h 0m",
+                "days": 0
+            },
+            "isReservable": true,
+            "options": {
+                "isDiscountAvailable": false,
+                "hasGratuityCheckout": false,
+                "isGratuityTrip": false,
+                "hasWomanSpace": false
+            },
+            "tripChange": {
+                "isAvailable": false,
+                "hasFee": false
+            },
+            "isMultiTimezone": false,
+            "parts": [
+                {
+                    "tripId": "7a33713c-45ad-3118-a7ed-4f535d010200",
+                    "price": 37.99,
+                    "duration": "1h 0m",
+                    "waitingTime": null,
+                    "departure": {
+                        "date": "2026-10-04",
+                        "time": "18:30:00",
+                        "city": "Salvador",
+                        "name": "Novo Terminal Rodoviário de Salvador",
+                        "state": "BA",
+                        "slug": "salvador-ba",
+                        "id": 3874
+                    },
+                    "arrival": {
+                        "date": "2026-10-04",
+                        "time": "19:30:00",
+                        "city": "Catu",
+                        "name": "Catu, BA",
+                        "state": "BA",
+                        "slug": "catu-ba",
+                        "id": 4680
+                    },
+                    "serviceClass": {
+                        "id": 2,
+                        "name": "Executivo",
+                        "isAntt": true
+                    },
+                    "travelCompany": {
+                        "name": "Cidade Sol",
+                        "logo": "https://static.clickbus.com/live/travel-company-logos/cidade-sol.svg",
+                        "slug": "cidade-sol"
+                    },
+                    "hasBoardingPass": true,
+                    "hasElectronicBoardingPass": true,
+                    "hasDigitalBoardingPass": true,
+                    "availableSeats": 44,
+                    "totalSeats": 46,
+                    "lowFareAvailableSeats": 8,
+                    "originalPrice": 42.54,
+                    "options": {
+                        "busFeatures": {
+                            "airConditioning": true,
+                            "seatRecline": 130,
+                            "bathroom": true
+                        },
+                        "isInTransit": false,
+                        "hasWomanSpace": false
+                    },
+                    "hasTripItinerary": false,
+                    "isLowFare": true
+                }
+            ],
+            "isMergedTrips": false
+        },
+        {
+            "type": "direct",
+            "price": 37.99,
+            "originalPrice": 42.54,
+            "isInstallmentFree": false,
+            "installmentFreeMinimumPrice": 0,
+            "maxInstallments": 4,
+            "duration": {
+                "hours": "1h 0m",
+                "days": 0
+            },
+            "isReservable": true,
+            "options": {
+                "isDiscountAvailable": false,
+                "hasGratuityCheckout": false,
+                "isGratuityTrip": false,
+                "hasWomanSpace": false
+            },
+            "tripChange": {
+                "isAvailable": false,
+                "hasFee": false
+            },
+            "isMultiTimezone": false,
+            "parts": [
+                {
+                    "tripId": "86322c79-c2ba-39c9-a65b-b3a5c50c2e58",
+                    "price": 37.99,
+                    "duration": "1h 0m",
+                    "waitingTime": null,
+                    "departure": {
+                        "date": "2026-10-04",
+                        "time": "19:30:00",
+                        "city": "Salvador",
+                        "name": "Novo Terminal Rodoviário de Salvador",
+                        "state": "BA",
+                        "slug": "salvador-ba",
+                        "id": 3874
+                    },
+                    "arrival": {
+                        "date": "2026-10-04",
+                        "time": "20:30:00",
+                        "city": "Catu",
+                        "name": "Catu, BA",
+                        "state": "BA",
+                        "slug": "catu-ba",
+                        "id": 4680
+                    },
+                    "serviceClass": {
+                        "id": 2,
+                        "name": "Executivo",
+                        "isAntt": true
+                    },
+                    "travelCompany": {
+                        "name": "Cidade Sol",
+                        "logo": "https://static.clickbus.com/live/travel-company-logos/cidade-sol.svg",
+                        "slug": "cidade-sol"
+                    },
+                    "hasBoardingPass": true,
+                    "hasElectronicBoardingPass": true,
+                    "hasDigitalBoardingPass": true,
+                    "availableSeats": 46,
+                    "totalSeats": 46,
+                    "lowFareAvailableSeats": 8,
+                    "originalPrice": 42.54,
+                    "options": {
+                        "busFeatures": {
+                            "airConditioning": true,
+                            "seatRecline": 130,
+                            "bathroom": true
+                        },
+                        "isInTransit": false,
+                        "hasWomanSpace": false
+                    },
+                    "hasTripItinerary": false,
+                    "isLowFare": true
+                }
+            ],
+            "isMergedTrips": false
+        },
+        {
+            "type": "direct",
+            "price": 28.99,
+            "originalPrice": 32.29,
+            "isInstallmentFree": false,
+            "installmentFreeMinimumPrice": 0,
+            "maxInstallments": 4,
+            "duration": {
+                "hours": "1h 30m",
+                "days": 0
+            },
+            "isReservable": true,
+            "options": {
+                "isDiscountAvailable": false,
+                "hasGratuityCheckout": false,
+                "isGratuityTrip": false,
+                "hasWomanSpace": false
+            },
+            "tripChange": {
+                "isAvailable": false,
+                "hasFee": false
+            },
+            "isMultiTimezone": false,
+            "parts": [
+                {
+                    "tripId": "ff45fa69-aa6f-3796-a464-a9f992bfe9c5",
+                    "price": 28.99,
+                    "duration": "1h 30m",
+                    "waitingTime": null,
+                    "departure": {
+                        "date": "2026-10-04",
+                        "time": "20:00:00",
+                        "city": "Salvador",
+                        "name": "Novo Terminal Rodoviário de Salvador",
+                        "state": "BA",
+                        "slug": "salvador-ba",
+                        "id": 3874
+                    },
+                    "arrival": {
+                        "date": "2026-10-04",
+                        "time": "21:30:00",
+                        "city": "Catu",
+                        "name": "Catu, BA",
+                        "state": "BA",
+                        "slug": "catu-ba",
+                        "id": 4680
+                    },
+                    "serviceClass": {
+                        "id": 1,
+                        "name": "Convencional",
+                        "isAntt": true
+                    },
+                    "travelCompany": {
+                        "name": "Cidade Sol",
+                        "logo": "https://static.clickbus.com/live/travel-company-logos/cidade-sol.svg",
+                        "slug": "cidade-sol"
+                    },
+                    "hasBoardingPass": true,
+                    "hasElectronicBoardingPass": true,
+                    "hasDigitalBoardingPass": true,
+                    "availableSeats": 46,
+                    "totalSeats": 46,
+                    "lowFareAvailableSeats": 8,
+                    "originalPrice": 32.29,
+                    "options": {
+                        "busFeatures": {
+                            "seatRecline": 122
+                        },
+                        "isInTransit": false,
+                        "hasWomanSpace": false
+                    },
+                    "hasTripItinerary": false,
+                    "isLowFare": true
+                }
+            ],
+            "isMergedTrips": false
+        },
+        {
+            "type": "direct",
+            "price": 45.8,
+            "originalPrice": 45.8,
+            "isInstallmentFree": false,
+            "installmentFreeMinimumPrice": 0,
+            "maxInstallments": 4,
+            "duration": {
+                "hours": "1h 20m",
+                "days": 1
+            },
+            "isReservable": true,
+            "options": {
+                "isDiscountAvailable": true,
+                "hasGratuityCheckout": true,
+                "isGratuityTrip": false,
+                "hasWomanSpace": false
+            },
+            "tripChange": {
+                "isAvailable": false,
+                "hasFee": false
+            },
+            "isMultiTimezone": false,
+            "parts": [
+                {
+                    "tripId": "cfb4e768-d3a6-3745-b3d9-6e1b2ed3f1ed",
+                    "price": 45.8,
+                    "duration": "1h 20m",
+                    "waitingTime": null,
+                    "departure": {
+                        "date": "2026-10-04",
+                        "time": "23:00:00",
+                        "city": "Salvador",
+                        "name": "Novo Terminal Rodoviário de Salvador",
+                        "state": "BA",
+                        "slug": "salvador-ba",
+                        "id": 3874
+                    },
+                    "arrival": {
+                        "date": "2026-10-05",
+                        "time": "00:20:00",
+                        "city": "Catu",
+                        "name": "Catu, BA",
+                        "state": "BA",
+                        "slug": "catu-ba",
+                        "id": 4680
+                    },
+                    "serviceClass": {
+                        "id": 2,
+                        "name": "Executivo",
+                        "isAntt": true
+                    },
+                    "travelCompany": {
+                        "name": "Rota Transportes",
+                        "logo": "https://static.clickbus.com/live/travel-company-logos/rota-transportes.svg",
+                        "slug": "rota-transportes"
+                    },
+                    "hasBoardingPass": true,
+                    "hasElectronicBoardingPass": true,
+                    "hasDigitalBoardingPass": true,
+                    "availableSeats": 42,
+                    "totalSeats": 42,
+                    "lowFareAvailableSeats": null,
+                    "originalPrice": 45.8,
+                    "options": {
+                        "busFeatures": {
+                            "airConditioning": true,
+                            "seatRecline": 130,
+                            "bathroom": true
+                        },
+                        "isInTransit": false,
+                        "hasWomanSpace": false
+                    },
+                    "hasTripItinerary": false,
+                    "isLowFare": false
+                }
+            ],
+            "isMergedTrips": false
+        }
+    ],
+    "origin": {
+        "name": "Salvador, BA",
+        "slug": "salvador-ba",
+        "cityName": "Salvador",
+        "stateCode": "BA"
+    },
+    "destination": {
+        "name": "Catu, BA",
+        "slug": "catu-ba",
+        "cityName": "Catu",
+        "stateCode": "BA"
+    },
+    "terminals": [
+        {
+            "slug": "salvador-ba",
+            "terminalName": "Novo Terminal Rodoviário de Salvador",
+            "terminalAddress": "Rodovia BR 324 sentido Feira de Santana, KM 7,5, s/n, Águas Claras, Salvador/BA, CEP 41308-500",
+            "phone": "(71) 3616-8357",
+            "hasLandingPage": true
+        },
+        {
+            "slug": "catu-ba",
+            "terminalName": "",
+            "terminalAddress": "R. Simões Filho, s/n - Catu, BA, 48110-000",
+            "phone": null,
+            "hasLandingPage": false
+        }
+    ],
+    "travelCompanies": [
+        {
+            "id": 96,
+            "name": "Cidade Sol",
+            "logo": "https://static.clickbus.com/live/travel-company-logos/cidade-sol.svg",
+            "slug": "cidade-sol",
+            "hasLandingPage": false
+        },
+        {
+            "id": 92,
+            "name": "Rota Transportes",
+            "logo": "https://static.clickbus.com/live/travel-company-logos/rota-transportes.svg",
+            "slug": "rota-transportes",
+            "hasLandingPage": false
+        }
+    ],
+    "filters": {
+        "terminalsOrigin": [
+            {
+                "id": "salvador-ba",
+                "name": "Salvador, BA"
+            }
+        ],
+        "terminalsDestination": [
+            {
+                "id": "catu-ba",
+                "name": "Catu, BA"
+            }
+        ],
+        "travelCompanies": [
+            {
+                "id": "cidade-sol",
+                "name": "Cidade Sol"
+            },
+            {
+                "id": "rota-transportes",
+                "name": "Rota Transportes"
+            }
+        ],
+        "serviceClasses": [
+            {
+                "id": 1,
+                "name": "Convencional"
+            },
+            {
+                "id": 2,
+                "name": "Executivo"
+            }
+        ]
+    },
+    "availableDaysWeek": [],
+    "alternativeDate": null,
+    "errors": [],
+    "isRedirectResult": false,
+    "initialOrigin": null,
+    "initialDestination": null,
+    "abTestLowFareVariant": null,
+    "isPageLimited": false
+}

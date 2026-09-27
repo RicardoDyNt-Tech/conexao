@@ -1,0 +1,20 @@
+{
+  "_comment": "Temporário: na Fase 2 os trechos vêm do banco (cities, city_source_ids, route_hubs).",
+  "legs": [
+    { "from": "feira-de-santana-todos", "to": "alagoinhas-ba" },
+    { "from": "alagoinhas-ba", "to": "catu-ba" },
+    { "from": "feira-de-santana-todos", "to": "salvador-ba" },
+    { "from": "salvador-ba", "to": "catu-ba" },
+    { "from": "catu-ba", "to": "alagoinhas-ba" },
+    { "from": "alagoinhas-ba", "to": "feira-de-santana-todos" },
+    { "from": "catu-ba", "to": "salvador-ba" },
+    { "from": "salvador-ba", "to": "feira-de-santana-todos" }
+  ],
+  "spike": [
+    { "from": "salvador-ba", "to": "catu-ba" },
+    { "from": "alagoinhas-ba", "to": "catu-ba" },
+    { "from": "feira-de-santana-todos", "to": "salvador-ba" },
+    { "from": "feira-de-santana-todos", "to": "alagoinhas-ba" },
+    { "from": "catu-ba", "to": "salvador-ba" }
+  ]
+}
