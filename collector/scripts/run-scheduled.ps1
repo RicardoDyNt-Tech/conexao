@@ -1,7 +1,9 @@
 ﻿# Rodada agendada do coletor (chamada pelo Agendador de Tarefas; ver install-task.ps1).
 # 1. Coleta os 8 trechos x 5 dias (npm run collect -- --legs all --days 5 --notify).
 #    Em quarentena por bloqueio (24 h, collector\.quarantine.json), não abre página nenhuma.
+#    Inclui as datas monitoradas no app (--watched), até 30 dias.
 # 2. Atende os pedidos "atualizar agora" pendentes (npm run worker -- --once).
+# 3. Avalia os alertas das datas monitoradas e avisa no Telegram (npm run alerts).
 # Log em collector\logs\AAAA-MM-DD_HHMM.log; mantém só os 30 mais recentes.
 $ErrorActionPreference = 'Continue'
 
@@ -24,7 +26,7 @@ function Invoke-Npm([string]$npmArgs) {
 Set-Location $collector
 Write-Log 'Início da rodada agendada'
 
-$code = Invoke-Npm 'run collect -- --legs all --days 5 --notify'
+$code = Invoke-Npm 'run collect -- --legs all --days 5 --watched --notify'
 Write-Log "collect terminou com código $code"
 
 if ($code -eq 3) {
@@ -35,6 +37,10 @@ if ($code -eq 3) {
   Write-Log "worker --once terminou com código $wcode"
   if ($code -eq 0 -and $wcode -ne 0) { $code = $wcode }
 }
+
+# Alertas só leem o banco (nenhum site): rodam mesmo depois de um bloqueio.
+$acode = Invoke-Npm 'run alerts'
+Write-Log "alerts terminou com código $acode"
 
 # Mantém só os 30 logs mais recentes (o nome já ordena por data).
 Get-ChildItem -Path $logs -Filter '*.log' | Sort-Object Name -Descending |

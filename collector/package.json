@@ -10,7 +10,8 @@
     "typecheck": "tsc --noEmit",
     "worker": "tsx src/worker.ts",
     "notify:test": "tsx src/notify-test.ts",
-    "spike:qp": "tsx src/spike-qp.ts"
+    "spike:qp": "tsx src/spike-qp.ts",
+    "alerts": "tsx src/alerts.ts"
   },
   "engines": {
     "node": ">=20.12"

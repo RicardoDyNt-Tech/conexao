@@ -4,7 +4,7 @@ import { addDays, defaultStartDate, parseDateList } from './time.js';
 import { formatSummary, loadLegs, runRound, shuffle, type Leg, type RoundEntry } from './runner.js';
 import { activeQuarantine, formatUntil } from './quarantine.js';
 import { loadEnv } from './env.js';
-import { Store } from './store.js';
+import { Store, watchedQueries } from './store.js';
 import { blockedMessage, budgetMessage, makeNotifier, roundFailedMessage, roundProblemsMessage, telegramFromEnv } from './notify/telegram.js';
 import type { LegQuery, Source } from './types.js';
 
@@ -19,6 +19,8 @@ const USAGE = `Uso:
 Opções: --headed (janela visível)  --no-save (não grava output/)
         --offline (não usa o Supabase: trechos de config/legs.json, nada é gravado no banco)
         --notify  (rodada agendada: resumo no Telegram se houver erro/bloqueio)
+        --watched (com --legs all: também as datas monitoradas no app, até 30 dias; só os
+                   trechos do sentido monitorado)
         --ignore-quarantine (uso manual consciente: roda mesmo em quarentena; se não houver
                              bloqueio, a quarentena acaba)
 Bloqueio é avisado no Telegram (se configurado) e põe AQUELA fonte em quarentena por 24 h;
@@ -40,6 +42,7 @@ async function main() {
       offline: { type: 'boolean', default: false },
       notify: { type: 'boolean', default: false },
       'ignore-quarantine': { type: 'boolean', default: false },
+      watched: { type: 'boolean', default: false },
       help: { type: 'boolean', default: false },
     },
   });
@@ -93,7 +96,16 @@ async function main() {
     }
     // Data por fora, trecho por dentro: se bloquear, as datas mais próximas já foram coletadas.
     // Ordem dos trechos sorteada a cada dia, para a rodada não repetir sempre a mesma sequência.
-    return dates.flatMap((date) => shuffle(legs).map((l) => ({ ...l, date })));
+    const window = dates.flatMap((date) => shuffle(legs).map((l) => ({ ...l, date })));
+    if (!a.watched) return window;
+    if (!store) { console.warn('⚠ --watched precisa do Supabase: datas monitoradas ignoradas.'); return window; }
+    // Datas monitoradas depois da janela (até 30 dias), só os trechos do sentido monitorado.
+    const today = defaultStartDate();
+    const watches = await store.listWatches(today, addDays(today, 30));
+    const { hubs, slugOf } = await store.routeContext(source.name);
+    const extra = watchedQueries(watches, hubs, slugOf, source.name, window);
+    if (extra.length) console.log(`Datas monitoradas (${sourceLabel(source.name)}): ${extra.length} página(s) a mais`);
+    return [...window, ...extra];
   };
 
   const results: RoundEntry[] = [];

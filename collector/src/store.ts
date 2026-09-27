@@ -53,6 +53,30 @@ export class Store {
     if (e) throw new Error(`collect_requests ${id}: ${e.message}`);
   }
 
+  /** Datas monitoradas ativas de hoje até +30 dias (qualquer usuário: é o coletor quem lê). */
+  async listWatches(today: string, until: string): Promise<Watch[]> {
+    const { data, error } = await this.db.from('watched_dates')
+      .select('origin_city_id, dest_city_id, travel_date')
+      .eq('active', true).gte('travel_date', today).lte('travel_date', until);
+    if (error) throw new Error(`watched_dates: ${error.message}`);
+    return data as Watch[];
+  }
+
+  /** Alertas a enviar agora (preço-alvo, assentos acabando). Não altera nada. */
+  async evaluateAlerts(): Promise<WatchAlert[]> {
+    const { data, error } = await this.db.rpc('evaluate_watch_alerts');
+    if (error) throw new Error(`evaluate_watch_alerts: ${error.message}`);
+    return (data ?? []) as WatchAlert[];
+  }
+
+  /** Registra o aviso enviado (só depois do Telegram confirmar). */
+  async markAlert(a: WatchAlert): Promise<void> {
+    const { error } = await this.db.rpc('mark_watch_alert', {
+      p_watch_id: a.watch_id, p_kind: a.kind, p_price: a.total_price, p_option_key: a.option_key,
+    });
+    if (error) throw new Error(`mark_watch_alert: ${error.message}`);
+  }
+
   /** Devolve um pedido "running" para a fila (sem ter coletado nada). */
   async requeueRequest(id: number): Promise<void> {
     const { error } = await this.db.from('collect_requests')
@@ -89,6 +113,50 @@ export class Store {
 export interface RouteHub { origin_city_id: number; dest_city_id: number; hub_city_id: number }
 
 export interface CollectRequest { id: number; origin_city_id: number; dest_city_id: number; travel_date: string }
+
+export interface Watch { origin_city_id: number; dest_city_id: number; travel_date: string }
+
+/** Linha de evaluate_watch_alerts() (numeric pode vir como texto). */
+export interface WatchAlert {
+  watch_id: number;
+  kind: 'price' | 'seats';
+  telegram_chat_id: string | null;
+  origin_city_id: number;
+  origin_city: string;
+  dest_city_id: number;
+  dest_city: string;
+  travel_date: string;
+  max_price: number | string | null;
+  min_seats_alert: number | null;
+  total_price: number | string;
+  service_fee: number | string | null;
+  departure_at: string;
+  arrival_at: string;
+  via_city: string | null;
+  min_seats: number | null;
+  seats_leg: number | null;
+  option_key: string;
+  data_as_of: string | null;
+}
+
+/**
+ * Páginas das datas monitoradas: para cada alerta, os trechos daquele sentido (direta +
+ * origem→hub + hub→destino) na data dele, sem repetir o que a janela normal já coleta.
+ */
+export function watchedQueries(watches: Watch[], hubs: RouteHub[], slugOf: Map<number, string>, source: string,
+  already: LegQuery[] = []): LegQuery[] {
+  const seen = new Set(already.map((q) => `${q.from}>${q.to}@${q.date}`));
+  const out: LegQuery[] = [];
+  const sorted = [...watches].sort((a, b) => a.travel_date.localeCompare(b.travel_date));
+  for (const w of sorted) {
+    const { legs } = legsForRequest({ id: 0, ...w }, hubs, slugOf, source);
+    for (const q of legs) {
+      const k = `${q.from}>${q.to}@${q.date}`;
+      if (!seen.has(k)) { seen.add(k); out.push(q); }
+    }
+  }
+  return out;
+}
 
 /**
  * Páginas para atender um pedido "atualizar agora": a direta origem→destino e,
