@@ -40,6 +40,7 @@ export class Store {
       p_status: r.status,
       p_trips: r.trips,
       p_error: r.error ?? null,
+      p_detail: r.detail ?? null,
       p_started_at: r.started_at,
       p_finished_at: r.finished_at,
     });

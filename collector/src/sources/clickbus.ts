@@ -26,13 +26,29 @@ interface CbPart {
   isLowFare?: boolean;
 }
 interface CbTrip { type?: string; price: number; originalPrice?: number; parts: CbPart[] }
-export interface CbTripsResponse { trips?: CbTrip[]; isRedirectResult?: boolean; errors?: unknown[] }
+export interface CbTripsResponse {
+  trips?: CbTrip[];
+  isRedirectResult?: boolean;
+  errors?: unknown[];
+  /** Preenchido quando não há viagens na data pedida e a ClickBus mostra a próxima. */
+  alternativeDate?: unknown;
+}
 
 export interface ParseResult {
   trips: NormalizedTrip[];
   warnings: string[];
   /** true quando a ClickBus redirecionou para outro trecho (ex.: Feira → Catu direto). */
   redirected: boolean;
+  /** Quantas viagens saem na data pedida. */
+  onDate: number;
+  /** Sem viagens na data pedida: próxima data que a ClickBus devolveu (AAAA-MM-DD). */
+  nextDate: string | null;
+}
+
+/** alternativeDate não tem formato documentado: aceita "AAAA-MM-DD…" ou objeto com data dentro. */
+function dateFrom(v: unknown): string | null {
+  const m = /\d{4}-\d{2}-\d{2}/.exec(typeof v === 'string' ? v : JSON.stringify(v ?? null));
+  return m ? m[0] : null;
 }
 
 function minOrNull(values: Array<number | null | undefined>): number | null {
@@ -45,7 +61,9 @@ export function parseClickbusTrips(json: CbTripsResponse, query: LegQuery, tz: s
     throw new Error('resposta de v6/trips sem o array "trips" (formato mudou?)');
   }
   // Resultado redirecionado = viagens de outro trecho. Não misturar com o trecho pedido.
-  if (json.isRedirectResult) return { trips: [], warnings: ['isRedirectResult=true: ignorado'], redirected: true };
+  if (json.isRedirectResult) {
+    return { trips: [], warnings: ['isRedirectResult=true: ignorado'], redirected: true, onDate: 0, nextDate: null };
+  }
 
   const buyUrl = searchPageUrl(query); // link direto para a viagem: a descobrir (docs/fontes.md)
   const trips: NormalizedTrip[] = [];
@@ -87,7 +105,12 @@ export function parseClickbusTrips(json: CbTripsResponse, query: LegQuery, tz: s
     }
   });
 
-  return { trips, warnings, redirected: false };
+  // Sem viagens na data pedida, a ClickBus devolve as da próxima data disponível.
+  // As viagens continuam válidas (para a data delas), mas não contam para a data pedida.
+  const onDate = trips.filter((t) => t.travel_date === query.date).length;
+  const otherDates = trips.map((t) => t.travel_date).filter((d) => d !== query.date).sort();
+  const nextDate = onDate === 0 ? (otherDates[0] ?? dateFrom(json.alternativeDate)) : null;
+  return { trips, warnings, redirected: false, onDate, nextDate };
 }
 
 // ---------------------------------------------------------------------------
@@ -155,7 +178,7 @@ export const clickbus: Source = {
   name: SOURCE,
   async collect(context: BrowserContext, query: LegQuery): Promise<LegResult> {
     const started_at = new Date().toISOString();
-    const base = { source: SOURCE, ...query, trips: [] as NormalizedTrip[], warnings: [] as string[], started_at };
+    const base = { source: SOURCE, ...query, trips: [] as NormalizedTrip[], found: 0, warnings: [] as string[], started_at };
     const page = await context.newPage();
     try {
       const cap = await captureTripsJson(page, query);
@@ -163,8 +186,10 @@ export const clickbus: Source = {
       const parsed = parseClickbusTrips(cap.json!, query);
       return {
         ...base,
-        status: parsed.trips.length ? 'ok' : 'empty',
+        status: parsed.onDate ? 'ok' : 'empty',
         trips: parsed.trips,
+        found: parsed.onDate,
+        detail: parsed.nextDate ? `sem viagens na data; próxima data disponível: ${parsed.nextDate}` : undefined,
         warnings: parsed.warnings,
         raw: cap.json,
         finished_at: new Date().toISOString(),

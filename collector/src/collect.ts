@@ -1,6 +1,6 @@
 import { parseArgs } from 'node:util';
 import { clickbus } from './sources/clickbus.js';
-import { addDays, todayIn } from './time.js';
+import { addDays, defaultStartDate } from './time.js';
 import { formatSummary, loadLegs, runRound, type Leg } from './runner.js';
 import { loadEnv } from './env.js';
 import { Store } from './store.js';
@@ -8,7 +8,8 @@ import type { LegQuery } from './types.js';
 
 const USAGE = `Uso:
   npm run collect -- --from salvador-ba --to catu-ba --date 2026-10-05
-  npm run collect -- --legs all --days 7
+  npm run collect -- --legs all --days 7 [--start AAAA-MM-DD]
+    (sem --start: começa hoje, ou amanhã se já passou das 20:00 em America/Bahia)
 Opções: --headed (janela visível)  --no-save (não grava output/)
         --offline (não usa o Supabase: trechos de config/legs.json, nada é gravado no banco)`;
 
@@ -16,7 +17,7 @@ async function main() {
   const { values: a } = parseArgs({
     options: {
       from: { type: 'string' }, to: { type: 'string' }, date: { type: 'string' },
-      legs: { type: 'string' }, days: { type: 'string' },
+      legs: { type: 'string' }, days: { type: 'string' }, start: { type: 'string' },
       headed: { type: 'boolean', default: false },
       'no-save': { type: 'boolean', default: false },
       offline: { type: 'boolean', default: false },
@@ -44,7 +45,8 @@ async function main() {
       legs = await loadLegs('legs'); // fallback offline
       console.log(`Trechos de config/legs.json (offline): ${legs.length}`);
     }
-    const start = a.date ?? todayIn();
+    const start = a.start ?? a.date ?? defaultStartDate();
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(start)) throw new Error('--start deve ser AAAA-MM-DD');
     // Data por fora, trecho por dentro: se bloquear, as datas mais próximas já foram coletadas.
     queries = Array.from({ length: days }, (_, d) => addDays(start, d))
       .flatMap((date) => legs.map((l) => ({ ...l, date })));

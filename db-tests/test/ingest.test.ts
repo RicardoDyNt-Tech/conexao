@@ -82,6 +82,35 @@ describe('record_leg_result', () => {
     expect(s.rows).toEqual([{ has_service: true, avg: 1 }]);
   });
 
+  it('sem viagens na data pedida (alternativeDate): empty com a próxima data, viagens gravadas', async () => {
+    const db = await freshDb();
+    const q = { from: 'feira-de-santana-todos', to: 'alagoinhas-ba', date: '2026-09-27' };
+    const parsed = parseClickbusTrips(JSON.parse(fs.readFileSync(
+      FIXTURE.replace('salvador-ba_catu-ba_2026-10-04', 'feira-de-santana-todos_alagoinhas-ba_2026-09-27'), 'utf8')), q);
+    const detail = `sem viagens na data; próxima data disponível: ${parsed.nextDate}`;
+    await asRole(db, 'service_role', () => db.query(
+      `select record_leg_result('clickbus', $1, $2, $3::date, 'empty', $4::jsonb, p_detail => $5)`,
+      [q.from, q.to, q.date, JSON.stringify(parsed.trips), detail]));
+
+    const run = await db.query('select status, trips_found, detail from collector_runs');
+    expect(run.rows).toEqual([{ status: 'empty', trips_found: 0,
+      detail: 'sem viagens na data; próxima data disponível: 2026-09-29' }]);
+    const t = await db.query<{ d: string }>(`select to_char(travel_date, 'YYYY-MM-DD') d from trips`);
+    expect(t.rows).toEqual([{ d: '2026-09-29' }]);
+    const s = await db.query('select has_service, avg_daily_trips::float avg from leg_stats');
+    expect(s.rows).toEqual([{ has_service: false, avg: 0 }]);
+  });
+
+  it('viagens de outra data não apagam as já gravadas daquela data', async () => {
+    const db = await freshDb();
+    const a = trip({ id: 'A29', dep: '2026-09-29 08:00', arr: '2026-09-29 09:00' });
+    const b = trip({ id: 'B29', dep: '2026-09-29 14:30', arr: '2026-09-29 15:50' });
+    await record(db, 'salvador-ba', 'catu-ba', '2026-09-29', 'ok', [a, b]);
+    await record(db, 'salvador-ba', 'catu-ba', '2026-09-27', 'empty', [b]); // resposta "próxima data" só com B
+    const ids = await db.query<{ source_trip_id: string }>('select source_trip_id from trips order by 1');
+    expect(ids.rows.map((r) => r.source_trip_id)).toEqual(['A29', 'B29']);
+  });
+
   it('slug desconhecido é rejeitado', async () => {
     const db = await freshDb();
     await expect(record(db, 'nao-existe', 'catu-ba', '2026-10-05', 'ok', [])).rejects.toThrow(/slug desconhecido/);

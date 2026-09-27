@@ -12,8 +12,10 @@ interface Row {
   departure_at: Date; arrival_at: Date; layover: unknown; total_duration: unknown;
   total_price: string; same_station: boolean | null;
 }
+/** Sem filtros (todas as combinações da janela de espera), para testar a janela em si. */
 async function connections(db: PGlite, date = D, min = '60 min', max = '4 h') {
-  const r = await db.query<Row>('select * from find_connections($1, $2, $3::date, $4::interval, $5::interval)',
+  const r = await db.query<Row>(
+    'select * from find_connections($1, $2, $3::date, $4::interval, $5::interval, p_earliest_only => false, p_hide_dominated => false)',
     [FEIRA, CATU, date, min, max]);
   return r.rows;
 }
@@ -95,11 +97,10 @@ describe('find_connections', () => {
     expect(p).toEqual(['F0600>S0829', 'F0600>S0830']);
   });
 
-  it('ordena por preço total e devolve data_as_of', async () => {
-    const r = await db.query<{ total_price: string; data_as_of: Date | null }>(
-      'select total_price, data_as_of from find_connections($1, $2, $3)', [FEIRA, CATU, D]);
-    const prices = r.rows.map((x) => Number(x.total_price));
-    expect(prices).toEqual([...prices].sort((a, b) => a - b));
+  it('devolve data_as_of', async () => {
+    const r = await db.query<{ data_as_of: Date | null }>(
+      'select data_as_of from find_connections($1, $2, $3)', [FEIRA, CATU, D]);
+    expect(r.rows.length).toBeGreaterThan(0);
     expect(r.rows.every((x) => x.data_as_of instanceof Date)).toBe(true);
   });
 });
@@ -189,5 +190,76 @@ describe('find_second_legs', () => {
     const r = await db.query<{ compatible: boolean }>(
       `select compatible from find_second_legs($1, $2, '20 min', '40 min')`, [await tripId(db, 'F'), CATU]);
     expect(r.rows).toEqual([{ compatible: true }]);
+  });
+});
+
+describe('find_connections — padrão: 2º mais cedo, sem dominadas, ordem escolhível', () => {
+  let db: PGlite;
+  beforeAll(async () => {
+    db = await freshDb();
+    await record(db, 'feira-de-santana-todos', 'salvador-ba', D, 'ok', [
+      trip({ id: 'F0600', dep: `${D} 06:00`, arr: `${D} 07:30`, price: 40 }),
+      trip({ id: 'F0700', dep: `${D} 07:00`, arr: `${D} 08:30`, price: 40 }),  // domina F0600 (sai depois, mesmo 2º)
+      trip({ id: 'F1200', dep: `${D} 12:00`, arr: `${D} 13:00`, price: 60 }),
+    ]);
+    await record(db, 'salvador-ba', 'catu-ba', D, 'ok', [
+      trip({ id: 'S0930', dep: `${D} 09:30`, arr: `${D} 10:50`, price: 30 }),
+      trip({ id: 'S1000', dep: `${D} 10:00`, arr: `${D} 11:00`, price: 20 }),  // mais barato, chega depois
+      trip({ id: 'S1400', dep: `${D} 14:00`, arr: `${D} 15:30`, price: 20 }),
+    ]);
+    await record(db, 'feira-de-santana-todos', 'alagoinhas-ba', D, 'ok', [
+      trip({ id: 'FA1100', dep: `${D} 11:00`, arr: `${D} 12:00`, price: 20 }),
+    ]);
+    await record(db, 'alagoinhas-ba', 'catu-ba', D, 'ok', [
+      trip({ id: 'AC1300', dep: `${D} 13:00`, arr: `${D} 16:00`, price: 15 }),  // Feira 11:00 → Catu 16:00, R$ 35
+    ]);
+  });
+  const run = async (extra = '') => pairs(db, (await db.query<Row>(
+    `select * from find_connections($1, $2, $3::date${extra})`, [FEIRA, CATU, D])).rows);
+  const ordered = async (order: string) => {
+    const ids = new Map((await db.query<{ id: number; source_trip_id: string }>('select id, source_trip_id from trips'))
+      .rows.map((r) => [r.id, r.source_trip_id]));
+    const r = await db.query<Row>(`select * from find_connections($1, $2, $3::date, p_order => $4)`, [FEIRA, CATU, D, order]);
+    return r.rows.map((x) => `${ids.get(x.leg1_trip_id)}>${ids.get(x.leg2_trip_id!)}`);
+  };
+
+  it('(a) para cada 1º ônibus, só o 2º que chega mais cedo', async () => {
+    const all = await run(', p_hide_dominated => false');
+    expect(all).toEqual(['F0600>S0930', 'F0700>S0930', 'F1200>S1400', 'FA1100>AC1300']);
+    // Sem o filtro (a), aparecem também os 2º que chegam mais tarde.
+    const every = await run(', p_earliest_only => false, p_hide_dominated => false');
+    expect(every).toContain('F0600>S1000');
+    expect(every).toContain('F0700>S1000');
+  });
+
+  it('(b) remove dominadas: sai no mesmo horário ou depois, chega antes ou junto, custa igual ou menos', async () => {
+    // F0600>S0930 é dominada por F0700>S0930 (sai depois, chega junto, mesmo preço).
+    // F1200>S1400 (R$ 80, 15:30) NÃO é dominada por FA1100>AC1300 (R$ 35, mas sai antes e chega depois).
+    expect(await run()).toEqual(['F0700>S0930', 'F1200>S1400', 'FA1100>AC1300']);
+  });
+
+  it('empate total nos três critérios: fica só uma', async () => {
+    const d2 = await freshDb();
+    await record(d2, 'feira-de-santana-todos', 'salvador-ba', D, 'ok', [
+      trip({ id: 'X1', dep: `${D} 06:00`, arr: `${D} 07:30`, price: 40 }),
+      trip({ id: 'X2', dep: `${D} 06:00`, arr: `${D} 07:30`, price: 40, company: 'Outra' }),
+    ]);
+    await record(d2, 'salvador-ba', 'catu-ba', D, 'ok', [trip({ id: 'Y', dep: `${D} 09:00`, arr: `${D} 10:00`, price: 30 })]);
+    const r = await d2.query('select * from find_connections($1, $2, $3::date)', [FEIRA, CATU, D]);
+    expect(r.rows).toHaveLength(1);
+  });
+
+  it('(c) ordem padrão pela chegada; opções por preço e por duração', async () => {
+    expect(await ordered('arrival')).toEqual(['F0700>S0930', 'F1200>S1400', 'FA1100>AC1300']); // 10:50, 15:30, 16:00
+    expect(await ordered('price')).toEqual(['FA1100>AC1300', 'F0700>S0930', 'F1200>S1400']);   // 35, 70, 80
+    expect(await ordered('duration')).toEqual(['F1200>S1400', 'F0700>S0930', 'FA1100>AC1300']); // 3h30, 3h50, 5h
+    const def = await db.query<Row>('select * from find_connections($1, $2, $3::date)', [FEIRA, CATU, D]);
+    expect(def.rows.map((x) => x.arrival_at.getTime())).toEqual(
+      [...def.rows.map((x) => x.arrival_at.getTime())].sort((a, b) => a - b));
+  });
+
+  it('p_order inválido é rejeitado', async () => {
+    await expect(db.query(`select * from find_connections($1, $2, $3::date, p_order => 'xyz')`, [FEIRA, CATU, D]))
+      .rejects.toThrow(/p_order inválido/);
   });
 });

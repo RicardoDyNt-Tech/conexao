@@ -153,6 +153,13 @@ Spike rodado no PC do Ricardo (Chrome instalado, perfil persistente, IP residenc
 }
 ```
 
+### ⚠️ Data sem viagens → a ClickBus devolve a próxima data (`alternativeDate`)
+Achado na validação da Fase 2 (27/09/2026): feira→alagoinhas pedido para 26/09 e 27/09 voltou com a viagem de **29/09**.
+- O coletor compara `parts[0].departure.date` com a data pedida: se nenhuma viagem for da data pedida, a execução é **`empty`**, com `collector_runs.detail = "sem viagens na data; próxima data disponível: AAAA-MM-DD"`.
+- As viagens recebidas **continuam sendo gravadas** (valem para a data delas), mas não apagam as outras viagens já gravadas daquela data.
+- O formato exato de `alternativeDate` não está documentado; o coletor usa a data das viagens e só recorre a ele se não vier viagem nenhuma.
+- Fixture: `trips-feira-de-santana-todos_alagoinhas-ba_2026-09-27.json` (**sintética**, montada com a estrutura real; trocar pelo JSON real salvo em `collector/output/`).
+
 ### Mapeamento para a tabela `trips`
 
 | Campo do banco | Origem no JSON |

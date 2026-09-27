@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { addDays, nextMonday, todayIn, zonedToUtcIso } from '../src/time.js';
+import { addDays, defaultStartDate, nextMonday, todayIn, zonedToUtcIso } from '../src/time.js';
 
 describe('time', () => {
   it('zonedToUtcIso em America/Bahia (sem horário de verão)', () => {
@@ -18,5 +18,14 @@ describe('time', () => {
     expect(nextMonday('2026-09-27')).toBe('2026-09-28'); // domingo → segunda
     expect(nextMonday('2026-09-28')).toBe('2026-10-05'); // segunda → próxima segunda
     expect(todayIn('America/Bahia', new Date('2026-09-28T02:00:00Z'))).toBe('2026-09-27');
+  });
+});
+
+describe('defaultStartDate', () => {
+  it('antes das 20:00 (Bahia) começa hoje; a partir das 20:00, amanhã', () => {
+    expect(defaultStartDate(new Date('2026-09-27T22:59:00Z'))).toBe('2026-09-27'); // 19:59 local
+    expect(defaultStartDate(new Date('2026-09-27T23:00:00Z'))).toBe('2026-09-28'); // 20:00 local
+    expect(defaultStartDate(new Date('2026-09-28T02:30:00Z'))).toBe('2026-09-28'); // 23:30 do dia 27 local
+    expect(defaultStartDate(new Date('2026-09-28T03:00:00Z'))).toBe('2026-09-28'); // 00:00 do dia 28
   });
 });

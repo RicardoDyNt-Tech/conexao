@@ -11,7 +11,8 @@ npm test               # parser + fusos, com a fixture de ../test/fixtures
 npm run spike          # 5 trechos da config "spike", próxima segunda, headless
 npm run spike -- --headed
 npm run collect -- --from salvador-ba --to catu-ba --date 2026-10-05
-npm run collect -- --legs all --days 7
+npm run collect -- --legs all --days 7                    # começa hoje; depois das 20:00, amanhã
+npm run collect -- --legs all --days 7 --start 2026-10-05
 ```
 
 - Saída: resumo por trecho com status `ok | empty | blocked | error` (`skipped` = não rodou porque a rodada parou num bloqueio).

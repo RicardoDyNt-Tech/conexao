@@ -96,3 +96,30 @@ describe('parseClickbusTrips (casos de borda)', () => {
     expect(() => parseClickbusTrips({} as CbTripsResponse, query)).toThrow(/trips/);
   });
 });
+
+describe('parseClickbusTrips (sem viagens na data: ClickBus devolve a próxima data)', () => {
+  // Pedido 27/09; a resposta traz a viagem de 29/09 (alternativeDate).
+  const alt = JSON.parse(fs.readFileSync(path.resolve(path.dirname(fixture),
+    'trips-feira-de-santana-todos_alagoinhas-ba_2026-09-27.json'), 'utf8')) as CbTripsResponse;
+  const q = { from: 'feira-de-santana-todos', to: 'alagoinhas-ba', date: '2026-09-27' };
+  const r = parseClickbusTrips(alt, q);
+
+  it('mantém as viagens (válidas para a data delas), mas nenhuma conta para a data pedida', () => {
+    expect(r.trips.length).toBeGreaterThan(0);
+    expect(r.trips.every((t) => t.travel_date !== q.date)).toBe(true);
+    expect(r.onDate).toBe(0);
+    expect(r.nextDate).toBe('2026-09-29');
+  });
+
+  it('mistura de datas: conta só as da data pedida', () => {
+    const mixed = { trips: [...json.trips!.slice(0, 2), ...alt.trips!] };
+    const m = parseClickbusTrips(mixed, query);
+    expect(m).toMatchObject({ onDate: 2, nextDate: null });
+    expect(m.trips).toHaveLength(3);
+  });
+
+  it('usa alternativeDate quando não vem viagem nenhuma', () => {
+    expect(parseClickbusTrips({ trips: [], alternativeDate: '2026-09-29T00:00:00' }, q).nextDate).toBe('2026-09-29');
+    expect(parseClickbusTrips({ trips: [], alternativeDate: null }, q).nextDate).toBeNull();
+  });
+});

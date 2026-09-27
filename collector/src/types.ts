@@ -37,7 +37,12 @@ export interface LegResult {
   to: string;
   date: string;
   status: LegStatus;
+  /** Todas as viagens recebidas (podem incluir outra data, ver `detail`). */
   trips: NormalizedTrip[];
+  /** Viagens na data pedida: é o que conta para ok/empty e trips_found. */
+  found: number;
+  /** Observação para collector_runs.detail (ex.: próxima data disponível). */
+  detail?: string;
   /** JSON bruto recebido pela página (quando houver). */
   raw?: unknown;
   error?: string;

@@ -45,7 +45,7 @@ export async function runRound(source: Source, queries: LegQuery[], opts: RoundO
       log(`→ ${q.from} → ${q.to} (${q.date})`);
       const { raw, ...res } = await source.collect(context, q);
       results.push(res);
-      log(`  ${res.status}${res.trips.length ? `: ${res.trips.length} viagens` : ''}${res.error ? ` — ${res.error}` : ''}`);
+      log(`  ${res.status}${res.found ? `: ${res.found} viagens` : ''}${res.error ? ` — ${res.error}` : ''}${res.detail ? ` (${res.detail})` : ''}`);
       if (opts.onResult) {
         await opts.onResult(res).catch((e) => log(`  ⚠ falha ao gravar no banco: ${(e as Error).message}`));
       }
@@ -69,8 +69,8 @@ export async function runRound(source: Source, queries: LegQuery[], opts: RoundO
 
 export function formatSummary(entries: RoundEntry[]): string {
   const rows = entries.map((e) => {
-    const n = 'trips' in e ? String(e.trips.length) : '-';
-    const err = 'error' in e && e.error ? e.error : '';
+    const n = 'found' in e ? String(e.found) : '-';
+    const err = ('error' in e && e.error) || ('detail' in e && e.detail) || '';
     return [`${e.from} → ${e.to}`, e.date, e.status, n, err];
   });
   const header = ['trecho', 'data', 'status', 'viagens', 'detalhe'];

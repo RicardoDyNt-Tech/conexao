@@ -44,3 +44,14 @@ export function nextMonday(date: string): string {
   const dow = new Date(Date.UTC(y, m - 1, d)).getUTCDay(); // 0 = domingo
   return addDays(date, ((8 - dow) % 7) || 7);
 }
+
+/** Hora local (0–23) no fuso informado. */
+export function hourIn(tz: string = SOURCE_TZ, now: Date = new Date()): number {
+  return Number(new Intl.DateTimeFormat('en-US', { timeZone: tz, hour: '2-digit', hourCycle: 'h23' }).format(now));
+}
+
+/** Primeira data da coleta: hoje, ou amanhã se já passou das `cutoffHour` (quase não há mais ônibus hoje). */
+export function defaultStartDate(now: Date = new Date(), tz: string = SOURCE_TZ, cutoffHour = 20): string {
+  const today = todayIn(tz, now);
+  return hourIn(tz, now) >= cutoffHour ? addDays(today, 1) : today;
+}

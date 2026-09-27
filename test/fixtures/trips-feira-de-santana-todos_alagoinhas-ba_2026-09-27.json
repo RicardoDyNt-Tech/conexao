@@ -1,0 +1,104 @@
+{
+    "_comment": "SINTÉTICA: montada a partir da estrutura real de v6/trips para o caso alternativeDate (pedido 27/09, ClickBus devolve a viagem de 29/09). Substituir pelo JSON real salvo em collector/output/clickbus_feira-de-santana-todos_alagoinhas-ba_2026-09-27.json.",
+    "origin": {
+        "name": "Feira de Santana - Todos, BA",
+        "slug": "feira-de-santana-todos",
+        "cityName": "Feira de Santana",
+        "stateCode": "BA"
+    },
+    "destination": {
+        "name": "Alagoinhas, BA",
+        "slug": "alagoinhas-ba",
+        "cityName": "Alagoinhas",
+        "stateCode": "BA"
+    },
+    "availableDaysWeek": [],
+    "alternativeDate": "2026-09-29",
+    "errors": [],
+    "isRedirectResult": false,
+    "initialOrigin": null,
+    "initialDestination": null,
+    "abTestLowFareVariant": null,
+    "isPageLimited": false,
+    "trips": [
+        {
+            "type": "direct",
+            "price": 45.8,
+            "originalPrice": 45.8,
+            "isInstallmentFree": false,
+            "installmentFreeMinimumPrice": 0,
+            "maxInstallments": 4,
+            "duration": {
+                "hours": "1h 20m",
+                "days": 0
+            },
+            "isReservable": true,
+            "options": {
+                "isDiscountAvailable": true,
+                "hasGratuityCheckout": true,
+                "isGratuityTrip": false,
+                "hasWomanSpace": false
+            },
+            "tripChange": {
+                "isAvailable": false,
+                "hasFee": false
+            },
+            "isMultiTimezone": false,
+            "parts": [
+                {
+                    "tripId": "00000000-0000-4000-8000-000000000929",
+                    "price": 45.8,
+                    "duration": "1h 20m",
+                    "waitingTime": null,
+                    "departure": {
+                        "date": "2026-09-29",
+                        "time": "14:30:00",
+                        "city": "Feira de Santana",
+                        "name": "Rodoviária de Feira de Santana",
+                        "state": "BA",
+                        "slug": "feira-de-santana-ba",
+                        "id": 1
+                    },
+                    "arrival": {
+                        "date": "2026-09-29",
+                        "time": "15:50:00",
+                        "city": "Alagoinhas",
+                        "name": "Alagoinhas, BA",
+                        "state": "BA",
+                        "slug": "alagoinhas-ba",
+                        "id": 2
+                    },
+                    "serviceClass": {
+                        "id": 2,
+                        "name": "Executivo",
+                        "isAntt": true
+                    },
+                    "travelCompany": {
+                        "name": "Rota Transportes",
+                        "logo": "https://static.clickbus.com/live/travel-company-logos/rota-transportes.svg",
+                        "slug": "rota-transportes"
+                    },
+                    "hasBoardingPass": true,
+                    "hasElectronicBoardingPass": true,
+                    "hasDigitalBoardingPass": true,
+                    "availableSeats": 41,
+                    "totalSeats": 42,
+                    "lowFareAvailableSeats": null,
+                    "originalPrice": 45.8,
+                    "options": {
+                        "busFeatures": {
+                            "airConditioning": true,
+                            "seatRecline": 130,
+                            "bathroom": true
+                        },
+                        "isInTransit": false,
+                        "hasWomanSpace": false
+                    },
+                    "hasTripItinerary": false,
+                    "isLowFare": false
+                }
+            ],
+            "isMergedTrips": false
+        }
+    ]
+}
