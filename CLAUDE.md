@@ -3,7 +3,7 @@
 Projeto pessoal do Ricardo. Buscador de passagens de ônibus com até 1 conexão.
 **Etapa atual: 1** (só Feira de Santana ⇄ Catu, BA, via Alagoinhas e via Salvador). A Etapa 2 (qualquer rota) vem depois: não fechar portas para ela.
 
-Leia antes de qualquer tarefa: `docs/plano.md` e `docs/fontes.md`.
+Leia antes de qualquer tarefa: `docs/handoff.md` (estado atual e pendências), `docs/plano.md` e `docs/fontes.md`.
 
 ## Restrições
 - Custo zero: Supabase free (projeto pessoal `conexao`), Cloudflare Pages, Telegram Bot API, GitHub.
