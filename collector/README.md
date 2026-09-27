@@ -125,3 +125,20 @@ npm run collect -- --source clickbus --from salvador-ba --to catu-ba --date 2026
 - Quero Passagem: a página faz uma chamada `/search/` por GDS; o coletor espera 5 s sem chamada
   em andamento (teto 45 s). Preço = vitrine; a taxa vai para `service_fee`. Mesmo ônibus de vários
   GDS vira 1 (id do QP).
+
+## Datas monitoradas e alertas (Fase 5b)
+
+```bash
+npm run collect -- --legs all --days 5 --watched   # janela + datas monitoradas no app (até 30 dias)
+npm run alerts                                      # avalia e manda os avisos no Telegram
+```
+
+- A rodada agendada já faz os dois (`run-scheduled.ps1`); os alertas rodam mesmo depois de um
+  bloqueio, porque só leem o banco.
+- **Preço-alvo**: a combinação mais barata da data (preço de vitrine) ficou ≤ alvo. Avisa de novo
+  só se ficar ainda mais barata; mudar o alvo no app recomeça.
+- **Poucos lugares**: a combinação mais barata tem trecho com ≤ N lugares. Uma vez por combinação.
+- Destino: o chat informado no alerta ou `TELEGRAM_CHAT_ID`. `APP_URL` (opcional) põe o link da
+  busca no aviso. O aviso só é marcado como enviado depois de o Telegram confirmar.
+- Cada data monitorada fora da janela de 5 dias custa ~5 páginas por fonte (direta + 2 hubs × 2
+  trechos) e conta no teto diário.

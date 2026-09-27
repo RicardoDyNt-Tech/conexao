@@ -144,3 +144,29 @@ export interface CollectorStatus {
   open_requests: Array<{ id: number; status: RequestStatus; travel_date: string; created_at: string; from_city: string; to_city: string }>;
   collected_dates: string[];
 }
+
+/** watch_status(): um alerta do usuário + a melhor opção de agora. */
+export interface WatchStatus {
+  id: number;
+  origin_city_id: number;
+  origin_city: string;
+  dest_city_id: number;
+  dest_city: string;
+  travel_date: string;
+  max_price: number | null;
+  min_seats_alert: number | null;
+  telegram_chat_id: string | null;
+  last_alerted_at: string | null;
+  best_price: number | null;
+  best_service_fee: number | null;
+  best_departure_at: string | null;
+  best_arrival_at: string | null;
+  best_via: string | null;
+  best_min_seats: number | null;
+  data_as_of: string | null;
+}
+
+export interface NewWatch {
+  origin: number; dest: number; date: string;
+  maxPrice: number | null; minSeats: number | null; telegramChatId: string | null;
+}

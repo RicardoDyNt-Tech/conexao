@@ -1,7 +1,7 @@
 import { createContext, useContext } from 'react';
 import type { Session, SupabaseClient } from '@supabase/supabase-js';
 import type {
-  CollectRequest, CollectorStatus, Connection, CoverageLeg, Route, SecondLeg, SortKey, Trip,
+  CollectRequest, CollectorStatus, Connection, CoverageLeg, NewWatch, Route, SecondLeg, SortKey, Trip, WatchStatus,
 } from './types';
 
 /**
@@ -30,6 +30,11 @@ export interface Api {
   getRequest(id: number): Promise<CollectRequest | null>;
   /** Avisa mudanças de status de um pedido (Realtime). Devolve a função para parar. */
   watchRequest(id: number, cb: (r: CollectRequest) => void): () => void;
+
+  // Datas monitoradas (alertas no Telegram)
+  watchStatus(): Promise<WatchStatus[]>;
+  addWatch(w: NewWatch): Promise<void>;
+  removeWatch(id: number): Promise<void>;
 }
 
 const REQUEST_COLS = 'id, origin_city_id, dest_city_id, travel_date, status, created_at, done_at, error';
@@ -120,6 +125,21 @@ export function supabaseApi(sb: SupabaseClient): Api {
           (p) => cb(p.new as CollectRequest))
         .subscribe();
       return () => { void sb.removeChannel(ch); };
+    },
+
+    async watchStatus() {
+      return check(await sb.rpc('watch_status')) as WatchStatus[];
+    },
+    async addWatch(w) {
+      const { error } = await sb.from('watched_dates').insert({
+        origin_city_id: w.origin, dest_city_id: w.dest, travel_date: w.date,
+        max_price: w.maxPrice, min_seats_alert: w.minSeats, telegram_chat_id: w.telegramChatId,
+      });
+      if (error) throw new Error(error.code === '23505' ? 'duplicate' : error.message);
+    },
+    async removeWatch(id) {
+      const { error } = await sb.from('watched_dates').delete().eq('id', id);
+      if (error) throw new Error(error.message);
     },
   };
 }

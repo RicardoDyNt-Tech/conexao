@@ -77,6 +77,9 @@ export function fakeApi(overrides: Partial<Api> = {}): Api {
     })),
     getRequest: vi.fn(async () => null),
     watchRequest: vi.fn(() => () => {}),
+    watchStatus: vi.fn(async () => []),
+    addWatch: vi.fn(async () => {}),
+    removeWatch: vi.fn(async () => {}),
     ...overrides,
   };
 }

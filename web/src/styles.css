@@ -153,3 +153,9 @@ input, select {
 .offers li .button { margin-left: auto; }
 .source-status h2 { margin-bottom: 4px; }
 .source-status p { margin: 4px 0; }
+
+.header-icons { display: inline-flex; gap: 12px; }
+.header-links { display: inline-flex; gap: 12px; }
+.badge.ok { background: var(--ok-bg); color: var(--text); }
+.card.watch.hit { border-color: var(--accent); border-width: 2px; }
+details summary { cursor: pointer; }

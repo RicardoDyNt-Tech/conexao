@@ -17,7 +17,10 @@ export function SearchHeader({ route, params, tab }: { route: Route; params: URL
             {until && ` · chegar até ${until}`}
           </div>
         </div>
-        <a className="link" href={href('/', p)}>Alterar</a>
+        <span className="header-links">
+          <a className="link" href={href('/alertas', { o: p.o, d: p.d, date: p.date })}>Monitorar</a>
+          <a className="link" href={href('/', p)}>Alterar</a>
+        </span>
       </div>
       <nav className="tabs">
         <a href={href('/r', p)} aria-current={tab === 'r' ? 'page' : undefined}>Combinações</a>
