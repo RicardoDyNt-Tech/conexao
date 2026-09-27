@@ -73,7 +73,7 @@
 
 ### Não funcionais
 - **Custo:** R$ 0.
-- **Coleta gentil:** 1 página por vez, 8–15 s de intervalo aleatório entre páginas, **2 rodadas por dia** (07:00 e 19:00) para os **próximos 7 dias**, mais os pedidos manuais e as datas monitoradas até 30 dias. Isso dá ~110–150 páginas por dia.
+- **Coleta gentil:** 1 página por vez, 15–30 s de intervalo aleatório entre páginas, home do site antes da 1ª busca, ordem dos trechos sorteada, **2 rodadas por dia** (07:00 e 19:00) para os **próximos 5 dias** (~80 páginas/dia), mais os pedidos manuais e as datas monitoradas até 30 dias. Após um bloqueio: pausa de 6 h. *(Ajustado em 10/2026, depois de um 403 com ~100 páginas numa noite de testes com 8–15 s e 7 dias.)*
 - **Resiliência:** a falha de um trecho não para a rodada; tudo fica registrado em `collector_runs`.
 - **Observabilidade:** Telegram avisa se uma rodada falhar ou se a ClickBus começar a devolver captcha/403.
 - **Busca no app:** < 2 s (lê só do banco).
@@ -246,9 +246,9 @@ create table watched_dates (
 - [x] Validar 2 datas comparando com a busca manual nos sites.
 
 ### Fase 3 — Agendamento (0,5 dia)
-- [ ] Agendador de Tarefas: 07:00 e 19:00, próximos 7 dias, 8 trechos.
-- [ ] `collect_requests` (atualizar agora).
-- [ ] Telegram: bot + aviso de falha/bloqueio.
+- [x] Agendador de Tarefas: 07:00 e 19:00, próximos 5 dias, 8 trechos.
+- [x] `collect_requests` (atualizar agora).
+- [x] Telegram: bot + aviso de falha/bloqueio (+ pausa de 6 h após bloqueio).
 
 ### Fase 4 — PWA (3–4 dias)
 - [ ] Buscar, Resultados, **Monte você mesmo**, Status.

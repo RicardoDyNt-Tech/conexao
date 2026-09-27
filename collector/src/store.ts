@@ -53,6 +53,13 @@ export class Store {
     if (e) throw new Error(`collect_requests ${id}: ${e.message}`);
   }
 
+  /** Devolve um pedido "running" para a fila (sem ter coletado nada). */
+  async requeueRequest(id: number): Promise<void> {
+    const { error } = await this.db.from('collect_requests')
+      .update({ status: 'pending', started_at: null }).eq('id', id);
+    if (error) throw new Error(`collect_requests ${id}: ${error.message}`);
+  }
+
   /** Avisa a cada insert em collect_requests (Realtime). `onStatus` recebe SUBSCRIBED/CHANNEL_ERROR/… */
   subscribeRequests(onInsert: () => void, onStatus: (status: string) => void): RealtimeChannel {
     return this.db.channel('collect_requests_inserts')

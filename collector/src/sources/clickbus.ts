@@ -5,6 +5,9 @@ import { SOURCE_TZ, zonedToUtcIso } from '../time.js';
 export const SOURCE = 'clickbus';
 const TRIPS_API_PATH = '/web/api/v6/trips';
 const RESPONSE_TIMEOUT_MS = 30_000;
+const HOME_URL = 'https://www.clickbus.com.br/';
+/** Tempo na página inicial antes da 1ª busca da rodada. */
+const HOME_WAIT_MS = { min: 4_000, max: 9_000 };
 
 export function searchPageUrl({ from, to, date }: LegQuery): string {
   return `https://www.clickbus.com.br/onibus/${from}/${to}?departureDate=${date}`;
@@ -176,6 +179,22 @@ export async function captureTripsJson(page: Page, q: LegQuery, timeoutMs = RESP
 
 export const clickbus: Source = {
   name: SOURCE,
+  /** Abre a home e fica alguns segundos, como alguém que chega ao site antes de buscar. */
+  async prepare(context: BrowserContext) {
+    const page = await context.newPage();
+    try {
+      const nav = await page.goto(HOME_URL, { waitUntil: 'domcontentloaded', timeout: RESPONSE_TIMEOUT_MS });
+      if (nav && BLOCK_STATUSES.has(nav.status())) return { status: 'blocked' as const, error: `HTTP ${nav.status()}` };
+      await page.waitForTimeout(HOME_WAIT_MS.min + Math.random() * (HOME_WAIT_MS.max - HOME_WAIT_MS.min));
+      const why = await looksBlocked(page);
+      if (why) return { status: 'blocked' as const, error: why };
+      return { status: 'ok' as const };
+    } catch (e) {
+      return { status: 'error' as const, error: (e as Error).message.split('\n')[0] };
+    } finally {
+      await page.close().catch(() => {});
+    }
+  },
   async collect(context: BrowserContext, query: LegQuery): Promise<LegResult> {
     const started_at = new Date().toISOString();
     const base = { source: SOURCE, ...query, trips: [] as NormalizedTrip[], found: 0, warnings: [] as string[], started_at };

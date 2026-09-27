@@ -37,7 +37,7 @@ $settings = New-ScheduledTaskSettingsSet `
 
 Register-ScheduledTask -TaskName $TaskName -Action $action -Trigger $triggers `
   -Principal $principal -Settings $settings -Force `
-  -Description 'Conexão: coleta ClickBus (8 trechos x 7 dias) + pedidos "atualizar agora". Ver collector/README.md.' |
+  -Description 'Conexão: coleta ClickBus (8 trechos x 5 dias) + pedidos "atualizar agora". Ver collector/README.md.' |
   Out-Null
 
 $info = Get-ScheduledTask -TaskName $TaskName | Get-ScheduledTaskInfo

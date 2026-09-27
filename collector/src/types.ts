@@ -57,8 +57,12 @@ export interface LegQuery {
   date: string;
 }
 
+export interface PrepareResult { status: 'ok' | 'blocked' | 'error'; error?: string }
+
 /** Interface comum a todas as fontes (ClickBus agora; Quero Passagem na Fase 5). */
 export interface Source {
   name: string;
+  /** Uma vez por rodada, antes da 1ª busca (ex.: abrir a home do site como um usuário faria). */
+  prepare?(context: BrowserContext): Promise<PrepareResult>;
   collect(context: BrowserContext, query: LegQuery): Promise<LegResult>;
 }

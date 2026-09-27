@@ -51,13 +51,16 @@ describe('mensagens do Telegram', () => {
     expect(msg).toContain('• e mais 3');
   });
 
-  it('mensagem imediata de bloqueio', () => {
-    expect(blockedMessage({ from: 'salvador-ba', to: 'catu-ba', date: '2026-10-05', error: 'HTTP 403' })).toBe([
+  it('mensagem imediata de bloqueio anuncia a pausa (aviso único)', () => {
+    expect(blockedMessage({ from: 'salvador-ba', to: 'catu-ba', date: '2026-10-05', error: 'HTTP 403' },
+      '03/10 01:15', 6)).toBe([
       '⛔ Conexão: ClickBus bloqueou a coleta',
       'Trecho: salvador-ba → catu-ba (05/10)',
       'Motivo: HTTP 403',
-      'A rodada parou (não insistimos). Próxima tentativa no próximo horário agendado.',
+      'Coleta e pedidos pausados por 6 h, até 03/10 01:15. Sem novos avisos nesse período.',
     ].join('\n'));
+    expect(blockedMessage({ from: 'a', to: 'b', date: '2026-10-05' }, '03/10 01:15', 6, 'atualização pedida no app'))
+      .toMatch(/^⛔ Conexão: ClickBus bloqueou a atualização pedida no app\n.*\nMotivo: não informado/);
   });
 
   it('falha da rodada inteira', () => {

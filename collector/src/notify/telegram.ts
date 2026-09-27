@@ -59,12 +59,17 @@ function list(items: string[]): string[] {
   return shown;
 }
 
-export function blockedMessage(r: Pick<LegResult, 'from' | 'to' | 'date' | 'error'>, context = 'coleta'): string {
+/**
+ * Único aviso de um bloqueio: durante a pausa, rodadas e pedidos são pulados em silêncio.
+ * `resumeAt` já formatado (ex.: "03/10 01:15").
+ */
+export function blockedMessage(r: Pick<LegResult, 'from' | 'to' | 'date' | 'error'>, resumeAt: string,
+  hours: number, context = 'coleta'): string {
   return [
     `⛔ Conexão: ClickBus bloqueou a ${context}`,
     `Trecho: ${legLabel(r)}`,
     `Motivo: ${r.error ?? 'não informado'}`,
-    'A rodada parou (não insistimos). Próxima tentativa no próximo horário agendado.',
+    `Coleta e pedidos pausados por ${hours} h, até ${resumeAt}. Sem novos avisos nesse período.`,
   ].join('\n');
 }
 

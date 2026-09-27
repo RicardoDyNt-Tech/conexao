@@ -2,11 +2,13 @@ import { parseArgs } from 'node:util';
 import { loadEnv } from './env.js';
 import { blockedMessage, makeNotifier, roundFailedMessage, telegramFromEnv } from './notify/telegram.js';
 import { runRound } from './runner.js';
+import { activeCooldown, COOLDOWN_HOURS, formatLocal } from './cooldown.js';
 import { clickbus } from './sources/clickbus.js';
 import { legsForRequest, Store } from './store.js';
 
 // "Atualizar agora": atende os pedidos de collect_requests.
-//   npm run worker            → fica rodando (Realtime + polling a cada 60 s)
+//   npm run worker            → fica rodando (Realtime + polling a cada 60 s); durante a
+//                               pausa de 6 h por bloqueio, não atende nada (pedidos ficam pending)
 //   npm run worker -- --once  → atende os pendentes e sai (usado pelo run-scheduled.ps1)
 
 const POLL_MS = 60_000;
@@ -14,9 +16,22 @@ const log = (m: string) => console.log(`[${new Date().toLocaleTimeString('pt-BR'
 
 type Notify = (text: string) => Promise<void>;
 
-/** Atende pedidos até a fila esvaziar. Devolve 'blocked' se a ClickBus bloquear (aí paramos tudo). */
+let pausedLogged: string | null = null;
+
+/**
+ * Atende pedidos até a fila esvaziar. Durante a pausa por bloqueio não pega pedido nenhum
+ * (eles ficam pending e são atendidos quando a pausa acabar).
+ */
 async function processPending(store: Store, notify: Notify, headless: boolean): Promise<'idle' | 'blocked'> {
   for (;;) {
+    const paused = await activeCooldown();
+    if (paused) {
+      if (pausedLogged !== paused.until) {
+        log(`⏸ Em pausa até ${formatLocal(paused.until)} por bloqueio; pedidos ficam na fila.`);
+        pausedLogged = paused.until;
+      }
+      return 'blocked';
+    }
     const req = await store.claimRequest();
     if (!req) return 'idle';
     log(`Pedido #${req.id}: cidades ${req.origin_city_id} → ${req.dest_city_id}, ${req.travel_date}`);
@@ -34,8 +49,13 @@ async function processPending(store: Store, notify: Notify, headless: boolean): 
         pauseFirst: true, // outra coleta pode ter acabado de rodar
         log: (m) => log(m.trim()),
         onResult: (r) => store.recordLeg(r),
-        onBlocked: (r) => notify(blockedMessage(r, 'atualização pedida no app')),
+        onBlocked: (r, c) => notify(blockedMessage(r, formatLocal(c.until), COOLDOWN_HOURS, 'atualização pedida no app')),
       });
+      if (results.every((r) => r.status === 'skipped')) {
+        // A pausa começou enquanto esperávamos a trava: devolve o pedido para a fila.
+        await store.requeueRequest(req.id);
+        return 'blocked';
+      }
       const bad = results.filter((r) => r.status !== 'ok' && r.status !== 'empty');
       await store.finishRequest(req.id, bad.length ? 'error' : 'done',
         bad.length ? bad.map((r) => `${r.from}→${r.to}: ${r.status}${'error' in r && r.error ? ` (${r.error})` : ''}`).join('; ') : undefined);
@@ -60,7 +80,7 @@ async function main() {
   const headless = !values.headed;
 
   if (values.once) {
-    if ((await processPending(store, notify, headless)) === 'blocked') process.exitCode = 3;
+    await processPending(store, notify, headless);
     return;
   }
 
@@ -73,12 +93,8 @@ async function main() {
     try {
       do {
         again = false;
-        if ((await processPending(store, notify, headless)) === 'blocked') {
-          log('⛔ Bloqueio: worker encerrado (não insistir). Reinicie depois.');
-          process.exitCode = 3;
-          stop?.();
-          return;
-        }
+        // Em pausa: sai e tenta de novo no próximo evento/polling (que também respeita a pausa).
+        if ((await processPending(store, notify, headless)) === 'blocked') return;
       } while (again);
     } catch (e) {
       log(`⚠ ${(e as Error).message}`); // falha de rede/banco: a próxima passada tenta de novo

@@ -11,13 +11,17 @@ npm test               # parser + fusos, com a fixture de ../test/fixtures
 npm run spike          # 5 trechos da config "spike", próxima segunda, headless
 npm run spike -- --headed
 npm run collect -- --from salvador-ba --to catu-ba --date 2026-10-05
-npm run collect -- --legs all --days 7                    # começa hoje; depois das 20:00, amanhã
-npm run collect -- --legs all --days 7 --start 2026-10-05
+npm run collect -- --legs all                             # 5 dias; começa hoje (depois das 20:00, amanhã)
+npm run collect -- --legs all --days 3 --start 2026-10-05
 ```
 
 - Saída: resumo por trecho com status `ok | empty | blocked | error` (`skipped` = não rodou porque a rodada parou num bloqueio).
 - JSON bruto e normalizado vão para `output/` (fora do Git). `--no-save` desliga.
-- Bloqueio (HTTP 401/403/429 ou página de captcha) interrompe a rodada; código de saída 3.
+- Gentileza: 15–30 s entre páginas; home da ClickBus aberta alguns segundos antes da 1ª busca;
+  ordem dos trechos sorteada a cada dia. Nada de headers ou tokens: só o navegador normal.
+- Bloqueio (HTTP 401/403/429 ou página de captcha) interrompe a rodada (código de saída 3) e grava
+  uma **pausa de 6 h** em `.cooldown.json`: até lá, `collect` e `worker` não abrem página nenhuma
+  e não mandam novos avisos. Para encerrar a pausa antes (só se tiver certeza), apague o arquivo.
 - Trechos: vêm do banco (`route_hubs` → origem→hub e hub→destino, traduzidos por `city_source_ids`).
   `config/legs.json` é só fallback offline (`--offline` ou sem credenciais no `.env`).
 - Gravação: cada trecho × data chama `record_leg_result` no Supabase (upsert em `trips`,
@@ -28,7 +32,7 @@ npm run collect -- --legs all --days 7 --start 2026-10-05
 ## Agendamento (Fase 3)
 
 A tarefa roda `scripts/run-scheduled.ps1` às **07:00 e 19:00** (com atraso aleatório de até 10 min):
-coleta `--legs all --days 7`, depois atende os pedidos "atualizar agora" pendentes
+coleta `--legs all --days 5`, depois atende os pedidos "atualizar agora" pendentes
 (`worker --once`). Só roda com você logado; se o PC estava desligado no horário, roda
 assim que ele ligar (StartWhenAvailable). Log em `logs/AAAA-MM-DD_HHMM.log` (ficam os 30 últimos).
 
@@ -61,7 +65,8 @@ npm run worker -- --once  # atende os pendentes e sai
 - Pedido `running` há mais de 30 min (PC desligou no meio) volta para a fila.
 - Uma coleta por vez: o worker e a rodada agendada compartilham uma trava (`.collector.lock`);
   quem chega depois espera.
-- Bloqueio da ClickBus: avisa no Telegram e o worker encerra (não insiste).
+- Bloqueio da ClickBus: avisa no Telegram e entra na pausa de 6 h; o worker continua rodando, mas
+  não pega pedidos até a pausa acabar (eles ficam `pending`).
 
 ## Telegram
 
@@ -71,7 +76,8 @@ Variáveis no `.env` da raiz: `TELEGRAM_BOT_TOKEN`, `TELEGRAM_CHAT_ID`.
 npm run notify:test   # manda "Conexão: Telegram OK"
 ```
 
-- Bloqueio (captcha/403): mensagem imediata, e a rodada para. Vale para `collect` e `worker`.
+- Bloqueio (captcha/403): **uma** mensagem imediata com o horário em que a pausa de 6 h acaba;
+  a rodada para, e nada mais é avisado durante a pausa. Vale para `collect` e `worker`.
 - Rodada agendada (`--notify`): resumo só se houver erro, bloqueio ou falha ao gravar no banco;
   e aviso se a rodada inteira falhar (ex.: Supabase fora do ar).
 - Sem as variáveis, nada é enviado (só um aviso no log).

@@ -14,8 +14,10 @@ Leia antes de qualquer tarefa: `docs/plano.md` e `docs/fontes.md`.
 - A coleta usa **Playwright com o Chrome instalado** (`channel: 'chrome'`) e **perfil persistente**, abrindo **páginas públicas** de busca e **interceptando a resposta JSON que a própria página recebe** (ClickBus: `/web/api/v6/trips`).
 - **Nunca** forjar, gerar, reaproveitar ou copiar tokens/assinaturas anti-bot (`st-cb-px`, `fp-cb`, JWTs de busca etc.). Nunca chamar esses endpoints diretamente fora do navegador. Nunca tentar resolver captcha.
 - Se o site devolver captcha, 403 ou bloqueio: **parar a rodada**, registrar `status = 'blocked'` em `collector_runs`, avisar no Telegram. Não insistir.
-- Uma página por vez, pausa aleatória de 8–15 s entre páginas. Nunca paralelizar contra o mesmo site.
-- Uso pessoal e baixo volume (~150 páginas/dia no máximo).
+- Se o site devolver bloqueio: **pausa de 6 h** (`collector/.cooldown.json`) sem abrir página nenhuma (rodadas e pedidos são pulados), com **um único** aviso no Telegram.
+- Uma página por vez, pausa aleatória de **15–30 s** entre páginas. Nunca paralelizar contra o mesmo site.
+- Cada rodada abre a home do site e espera alguns segundos antes da 1ª busca; a ordem dos trechos é sorteada a cada dia.
+- Uso pessoal e baixo volume (~150 páginas/dia no máximo; rodada agendada: 8 trechos × 5 dias = 40 páginas).
 
 ## Regras de design (para escalar sem reescrever)
 - Nada de "Feira", "Catu" etc. hardcoded no código: cidades, slugs e hubs vêm do banco (`cities`, `city_source_ids`, `route_hubs`).
