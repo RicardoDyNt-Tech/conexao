@@ -272,6 +272,7 @@ Conclusões (com os arquivos de `/search/` analisados):
   - 14:30 → 18:10 via Alagoinhas, R$ 57,43 = mesma combinação e preço que a ClickBus deu em 29/09.
   - Nada depois das 16:40: os Feira → Salvador da noite chegam com menos de 1 h para o último Salvador → Catu (20:00).
   - Preços sem a taxa do QP (ex.: via Alagoinhas + R$ 17,22 de taxa no pagamento).
+- `find_connections` Catu → Feira em 12/10 (só QP): **9 combinações, todas via Salvador**, das 06:20 às 18:40 (chegadas 10:40–23:00), a maioria por R$ 94,54. Nenhuma via Alagoinhas, como esperado (Alagoinhas → Feira vazio nesse dia). A das 18:40 sai bem mais cara (R$ 144,54).
 - **Feira → Alagoinhas aparece no sábado e na segunda no QP**; na ClickBus (semana de 27/09) só na terça. Grade diferente entre os sites ou mudança de horário: acompanhar.
 - **Alagoinhas → Feira vazio na segunda 12/10** (na ClickBus havia às segundas). Sem "próxima data" no QP (ele não sugere outra data como a ClickBus).
 
