@@ -361,3 +361,22 @@ Nenhum captcha nem 403. O que a plataforma revelou:
   título "Rota Transportes - Venda Web", formulário normal no print). Agora só conta como bloqueio:
   HTTP 401/403/429 (ou 202/405 no documento), título "Human Verification" ou captcha **visível** e
   preenchido na tela.
+
+### 3ª rodada do spike (27/09): as duas viações respondem, sem bloqueio
+- **Cidade Sol**: Salvador→Catu 22 viagens; Feira→Salvador 27. **Rota**: Alagoinhas→Catu 2 (10:50 e
+  17:00, R$ 18,75); Feira→Alagoinhas **0** no sábado 10/10 (o site respondeu a lista vazia; o trecho
+  não roda todo dia, o ClickBus já mostrava "data alternativa").
+- **JSON das viagens** (`POST consulta/idaJson/0`, objeto com `lsConsultaIda`), por viagem:
+  `servico`/`corridaId` (id da viagem, igual ao `info-servico` do card), `dataHoraSaida` e
+  `dataHoraChegada` (DD/MM/AAAA HH:MM, com a data de chegada), `preco` (o que o site cobra),
+  `precoOriginal`, `tarifa`, `vlrTaxaEmbarque`, `vlrPedagio`, `vlrSeguro`, `classe`,
+  `assentosLivres`, `empresa`, `vende` (algumas vêm `false`: aparecem mas não vendem online).
+  **Id estável**: `servico` + data de saída.
+- Campos de sessão no JSON (`sessionId`, `hashId`) são ocultados antes de gravar.
+- **Faixa de dias**: `#week-days-search` com 5 dias centrados na data (08–12/10 para 10/10),
+  `.week-day` com `DD/MM/AAAA`; `datasFormatadasIda` traz os mesmos 5 dias.
+- **Problema a esclarecer**: o formulário saiu como "IDA E VOLTA" (`radio-idavolta=Round Trip`),
+  porque o rádio estilizado não aceitou o `check()`; e, quando há viagens, a página **volta sozinha
+  para a home** ~1–2 s depois de mostrar a lista (logo após `poltronas/consultarPassagensCarrinho`).
+  Por isso o teste da aba do dia seguinte não valeu. O spike agora clica no rótulo "SOMENTE IDA",
+  registra quem dispara cada navegação (script/linha, via CDP) e guarda os scripts públicos do site.

@@ -19,6 +19,7 @@ export interface WrLeg { from: string; to: string }   // nomes como na plataform
 export interface NetEntry {
   seq: number;
   kind: string;                 // document | xhr | fetch
+  t?: number;                   // ms desde a abertura da página
   method: string;
   url: string;                  // tokens ocultados
   postData?: string;            // idem, truncado
@@ -35,6 +36,7 @@ export interface WrReport {
   status: 'ok' | 'empty' | 'blocked' | 'error' | 'form-not-found';
   detail?: string;
   steps: string[];
+  navigations?: string[];       // cada navegação de página e quem a disparou (script/linha)
   pages: number;                // carregamentos de página (documento) usados
   resultUrl?: string;
   cards: number;
@@ -50,7 +52,7 @@ export interface WrReport {
 // Ocultação: sessão/estado de formulário (ViewState, CSRF, JSESSIONID…) não vai para arquivo.
 // ---------------------------------------------------------------------------
 
-const SENSITIVE_KEY = /(token|csrf|viewstate|eventvalidation|session|jsession|auth|cookie|captcha|__requestverification)/i;
+const SENSITIVE_KEY = /(hashid|token|csrf|viewstate|eventvalidation|session|jsession|auth|cookie|captcha|__requestverification)/i;
 
 /** "a=1&javax.faces.ViewState=xyz" → oculta valores sensíveis ou muito longos. */
 export function redactForm(body: string): string {
@@ -227,6 +229,17 @@ async function fillCity(page: Page, f: Field, city: string, steps: string[]): Pr
 }
 
 /** Campo select2 (caixa de busca por cima do select), usado na Venda Web. */
+/** Marca "somente ida". O rádio da Venda Web é estilizado: se o check() não pegar, clica no rótulo. */
+async function markOneWay(page: Page, f: Field): Promise<string> {
+  const radio = page.locator(`[data-cx-idx="${f.idx}"]`);
+  const ok = () => radio.isChecked().catch(() => false);
+  await radio.check({ timeout: 3_000 }).catch(() => {});
+  if (!(await ok()) && f.id) await page.locator(`label[for="${f.id}"]`).first().click({ timeout: 3_000 }).catch(() => {});
+  if (!(await ok())) await page.getByText(f.label || 'SOMENTE IDA', { exact: true }).first().click({ timeout: 3_000 }).catch(() => {});
+  if (!(await ok())) await radio.evaluate('(el) => el.click()').catch(() => {});
+  return (await ok()) ? 'marcou "somente ida"' : 'NÃO conseguiu marcar "somente ida"';
+}
+
 async function fillSelect2(page: Page, selectId: string, city: string, steps: string[]): Promise<boolean> {
   const container = page.locator(`#select2-${selectId}-container`);
   const search = await openSelect2(page, selectId, steps);
@@ -336,6 +349,7 @@ export async function captureWrLeg(ctx: BrowserContext, site: Site, leg: WrLeg, 
   const WAIT = opts.waitMs ?? WAIT_MS;
   const slug = (s: string) => s.split(' - ')[0]!.toLowerCase().replace(/[^a-z0-9]+/g, '-');
   const dir = path.join(outRoot, site.source, date, `${slug(leg.from)}_${slug(leg.to)}`);
+  await fs.rm(dir, { recursive: true, force: true }); // sem sobras de rodadas anteriores
   await fs.mkdir(dir, { recursive: true });
   const r: WrReport = { source: site.source, leg: `${leg.from} → ${leg.to}`, status: 'error', steps: [], pages: 0,
     cards: 0, tab: { tried: false }, xhrCount: 0, jsonResponses: 0, dir };
@@ -345,6 +359,33 @@ export async function captureWrLeg(ctx: BrowserContext, site: Site, leg: WrLeg, 
   let seq = 0;
   let blockedStatus: number | null = null;
   const page = await ctx.newPage();
+  const t0 = Date.now();
+  // Quem mandou a página navegar (script do site? qual arquivo/linha?). Só leitura, via CDP.
+  const navs: string[] = [];
+  const cdp = await ctx.newCDPSession(page).catch(() => null);
+  if (cdp) {
+    await cdp.send('Network.enable').catch(() => {});
+    cdp.on('Network.requestWillBeSent', (ev: { type?: string; request: { url: string; method: string };
+      initiator: { type: string; stack?: { callFrames: { functionName: string; url: string; lineNumber: number }[] } } }) => {
+      if (ev.type !== 'Document') return;
+      const frames = (ev.initiator.stack?.callFrames ?? []).slice(0, 4)
+        .map((f) => `${f.functionName || '(anônima)'}@${f.url.split('/').pop()}:${f.lineNumber + 1}`);
+      navs.push(`${((Date.now() - t0) / 1000).toFixed(1)}s ${ev.request.method} ${redactUrl(ev.request.url).url.replace(/^https?:\/\/[^/]+/, '')} ← ${ev.initiator.type}${frames.length ? ' ' + frames.join(' < ') : ''}`);
+    });
+  }
+  // Scripts do próprio site (públicos) ficam salvos uma vez por viação, para ler a lógica das abas.
+  const scriptsDir = path.join(outRoot, site.source, '_scripts');
+  page.on('response', (resp) => {
+    const req = resp.request();
+    if (req.resourceType() !== 'script' || new URL(req.url()).host !== new URL(site.base).host) return;
+    const name = new URL(req.url()).pathname.split('/').filter(Boolean).slice(-2).join('__');
+    pending.push((async () => {
+      const body = await resp.body().catch(() => null);
+      if (!body || body.length > 2_000_000) return;
+      await fs.mkdir(scriptsDir, { recursive: true });
+      await fs.writeFile(path.join(scriptsDir, name), redactHtml(body.toString('utf8')));
+    })());
+  });
   const siteHost = new URL(site.base).host;
   const sameSiteDoc = (u: string) => new URL(u).host === siteHost;
 
@@ -353,7 +394,7 @@ export async function captureWrLeg(ctx: BrowserContext, site: Site, leg: WrLeg, 
     const kind = req.resourceType();
     if (!['document', 'xhr', 'fetch'].includes(kind)) return;
     const n = ++seq;
-    const e: NetEntry = { seq: n, kind, method: req.method(), url: redactUrl(req.url()).url, phase, status: resp.status(),
+    const e: NetEntry = { seq: n, t: Date.now() - t0, kind, method: req.method(), url: redactUrl(req.url()).url, phase, status: resp.status(),
       contentType: resp.headers()['content-type'] ?? '' };
     // Terceiros (AWS WAF da Rota, Facebook…): só URL e status. O corpo deles traz sinais do
     // navegador do Ricardo e não interessa.
@@ -420,7 +461,7 @@ export async function captureWrLeg(ctx: BrowserContext, site: Site, leg: WrLeg, 
 
     // 2) Preenche e pesquisa
     const oneWay = fields.find((x) => x.type === 'radio' && /somente ida|apenas ida|one.?way|apenasida/i.test(`${x.label} ${x.id}`));
-    if (oneWay) { await page.locator(`[data-cx-idx="${oneWay.idx}"]`).check().catch(() => {}); r.steps.push('marcou "somente ida"'); }
+    if (oneWay) r.steps.push(await markOneWay(page, oneWay));
     if (!(await fillCity(page, pick.origin, leg.from, r.steps))) {
       r.status = 'form-not-found'; r.detail = `não consegui escolher a origem "${leg.from}"`; await dump('home'); return r;
     }
@@ -454,13 +495,20 @@ export async function captureWrLeg(ctx: BrowserContext, site: Site, leg: WrLeg, 
     const label = `${String(next.getUTCDate()).padStart(2, '0')}/${String(next.getUTCMonth() + 1).padStart(2, '0')}`;
     const strip = page.locator('#week-days-search');
     const scope = (await strip.count()) ? strip : page.locator('body');
-    const tab = scope.getByText(label, { exact: false }).filter({ hasNotText: /\d{2}:\d{2}/ }).first();
-    if (r.cards > 0 && await tab.isVisible().catch(() => false)) {
+    const full = `${label}/${next.getUTCFullYear()}`;
+    const dayItems = scope.locator('.week-day');
+    const tab = (await dayItems.filter({ hasText: full }).count())
+      ? dayItems.filter({ hasText: full }).first()
+      : scope.getByText(label, { exact: false }).filter({ hasNotText: /\d{2}:\d{2}/ }).first();
+    const onResults = /\/consulta/.test(page.url());
+    if (!onResults) r.steps.push(`a página saiu dos resultados sozinha (agora em ${redactUrl(page.url()).url.replace(/^https?:\/\/[^/]+/, '')})`);
+    if (r.cards > 0 && onResults && await tab.isVisible().catch(() => false)) {
       await opts.pause();
       const docsBefore = net.filter((x) => x.kind === 'document').length;
       const xhrBefore = net.filter((x) => x.kind !== 'document').length;
       phase = 'tab';
-      if (!(await opts.takePage())) { r.steps.push('aba não testada: limite diário'); }
+      if (!/\/consulta/.test(page.url())) { r.steps.push(`aba não testada: durante a pausa a página saiu dos resultados (agora em ${redactUrl(page.url()).url.replace(/^https?:\/\/[^/]+/, '')})`); }
+      else if (!(await opts.takePage())) { r.steps.push('aba não testada: limite diário'); }
       else {
         r.pages++;
         const firstBefore = JSON.stringify(((await page.evaluate(DUMP_CARDS)) as unknown[])[0] ?? null);
@@ -486,6 +534,7 @@ export async function captureWrLeg(ctx: BrowserContext, site: Site, leg: WrLeg, 
     await dump('error').catch(() => 0);
   } finally {
     await Promise.all(pending).catch(() => {});
+    r.navigations = navs;
     r.xhrCount = net.filter((x) => x.kind !== 'document').length;
     r.jsonResponses = net.filter((x) => x.file?.endsWith('.json')).length;
     await fs.writeFile(path.join(dir, 'network.json'), JSON.stringify(net, null, 2)).catch(() => {});

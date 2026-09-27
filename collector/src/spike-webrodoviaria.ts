@@ -11,6 +11,7 @@ import { captureWrLeg, OUT_ROOT, type Site, type WrLeg, type WrReport } from './
 // Spike da Fase 5c: Venda Web da Cidade Sol e da Rota (config/legs.json, "spikeWebrodoviaria").
 //   npm run spike:webrodoviaria                      → 2026-10-10, headless
 //   npm run spike:webrodoviaria -- --only rota --headed
+//   npm run spike:webrodoviaria -- --leg catu          → só trechos cujo "origem → destino" contém "catu"
 // Uma viação de cada vez, 15–30 s entre páginas, teto diário e quarentena por viação.
 
 const PAUSE_MS = { min: 15_000, max: 30_000 };
@@ -26,6 +27,7 @@ async function main() {
     date: { type: 'string', default: '2026-10-10' },
     headed: { type: 'boolean', default: false },
     only: { type: 'string' },
+    leg: { type: 'string' },
   } });
   const date = values.date!;
   if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) throw new Error('--date deve ser AAAA-MM-DD');
@@ -45,13 +47,15 @@ async function main() {
         const q = await activeQuarantine(source);
         if (q) { console.log(`⏸ ${s.label} em quarentena até ${formatUntil(q.until)}: pulada.`); continue; }
         console.log(`\n== ${s.label} (${s.base})`);
-        for (const leg of s.legs) {
+        const legs = s.legs.filter((l) => !values.leg || `${l.from} → ${l.to}`.toLowerCase().includes(values.leg!.toLowerCase()));
+        for (const leg of legs) {
           if (!first) await pause();
           first = false;
           console.log(`→ ${leg.from} → ${leg.to} (${date})`);
           const r = await captureWrLeg(ctx, site, leg, date, OUT_ROOT, { takePage: () => takePage(limit), pause });
           reports.push(r);
           r.steps.forEach((st) => console.log(`    · ${st}`));
+          (r.navigations ?? []).forEach((n) => console.log(`    ↪ ${n}`));
           console.log(`  ${r.status}${r.detail ? ` — ${r.detail}` : ''} · ${r.cards} cards · XHR ${r.xhrCount} (JSON ${r.jsonResponses})`
             + ` · form ${r.formMethod ?? '?'} ${r.formAction ?? ''} · páginas ${r.pages}`
             + (r.tab.tried ? ` · aba ${r.tab.label}: ${r.tab.via}, ${r.tab.cards} cards` : ''));
