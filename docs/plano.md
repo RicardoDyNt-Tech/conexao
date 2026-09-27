@@ -259,7 +259,7 @@ create table watched_dates (
 ### Fase 5 — Extras (2–3 dias)
 - [ ] Datas monitoradas + alertas de preço/assentos.
 - [ ] Calendário de menor preço.
-- [ ] 2ª fonte: Quero Passagem (mesmo método; inclui as conexões prontas como opção extra).
+- [x] 2ª fonte: Quero Passagem (Fase 5a, antecipada após o 403 da ClickBus): spike, parser, `--source`, quarentena por fonte, `trips_best`, app com as duas fontes. Conexões prontas do QP são gravadas (`parts_count` > 1) mas ficam fora do cruzamento.
 
 **Etapa 1: ~2–3 fins de semana.**
 

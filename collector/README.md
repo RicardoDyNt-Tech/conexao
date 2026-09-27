@@ -108,3 +108,20 @@ npm run spike:qp -- --date 2026-10-12     # outra data
 - JWTs são ocultados em tudo o que é gravado (`<jwt>` + claims do payload).
 - Bloqueio (HTTP 401/403/429, ou captcha sem nenhum resultado): para na hora e grava a
   quarentena **só do QP** (`.quarantine.queropassagem.json`, 24 h).
+
+## Fontes (Fase 5a)
+
+```bash
+npm run collect -- --legs all                                    # todas as fontes (padrão), uma de cada vez
+npm run collect -- --source queropassagem --legs all --dates 2026-10-10,2026-10-12
+npm run collect -- --source clickbus --from salvador-ba --to catu-ba --date 2026-10-10
+```
+
+- `--source clickbus|queropassagem|all`. Os slugs de cada fonte vêm de `city_source_ids`
+  (QP: `feira-de-santana-ba`, `alagoinhas`, `salvador-ba`, `catu`); `--from/--to` exigem `--source`.
+- **Quarentena por fonte** (`.quarantine.clickbus.json`, `.quarantine.queropassagem.json`): a
+  ClickBus bloqueada não impede o QP. O `.quarantine.json` antigo vale como ClickBus.
+- O teto diário de páginas continua **um só** (todas as fontes somadas).
+- Quero Passagem: a página faz uma chamada `/search/` por GDS; o coletor espera 5 s sem chamada
+  em andamento (teto 45 s). Preço = vitrine; a taxa vai para `service_fee`. Mesmo ônibus de vários
+  GDS vira 1 (id do QP).

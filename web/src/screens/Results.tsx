@@ -43,12 +43,11 @@ export function Results({ route, params }: { route: Route; params: URLSearchPara
     navigate('/r', { ...Object.fromEntries(params.entries()), ...changes }, true);
 
   const shown = data ? applyTimeFilters(data.list, date, after, until) : [];
-  const quarantine = data?.status?.quarantine ?? null;
 
   return (
     <main className="screen">
       <SearchHeader route={route} params={params} tab="r" />
-      <QuarantineBanner q={quarantine} />
+      <QuarantineBanner status={data?.status ?? null} />
       {err && <p className="error">Erro ao buscar: {err}</p>}
       {!data && !err && <p className="muted">Carregando…</p>}
 

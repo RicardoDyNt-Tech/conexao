@@ -140,10 +140,24 @@ describe('Resultados', () => {
       });
       renderApp(api, hash());
       expect(await screen.findByRole('status')).toHaveTextContent(
-        'Coletor pausado até 19:00 (o site bloqueou temporariamente). O pedido fica na fila mesmo assim.');
+        'ClickBus pausada até 19:00 (o site bloqueou temporariamente). O pedido fica na fila mesmo assim.');
       await userEvent.click(screen.getByRole('button', { name: 'Atualizar agora' }));
       expect(api.requestCollect).toHaveBeenCalled();
       expect(await screen.findByText('Pedido na fila desde 15:00')).toBeInTheDocument();
+    });
+
+    it('por fonte: "ClickBus pausada até HH:MM; Quero Passagem ok"', async () => {
+      const api = fakeApi({
+        findConnections: vi.fn(async () => [conn({ date: D, dep: '06:00', arr1: '07:30', dep2: '09:00', arr: '10:00' })]),
+        dateCoverage: vi.fn(async () => COLLECTED),
+        collectorStatus: vi.fn(async () => ({ ...EMPTY_STATUS, sources: [
+          { source: 'clickbus', quarantine: quarantined.quarantine, last_round: null },
+          { source: 'queropassagem', quarantine: null, last_round: null },
+        ] })),
+      });
+      renderApp(api, hash());
+      expect(await screen.findByRole('status')).toHaveTextContent(
+        'ClickBus pausada até 19:00 (o site bloqueou temporariamente); Quero Passagem ok. Os pedidos são atendidos pelas outras fontes.');
     });
 
     it('sem quarentena: sem banner', async () => {

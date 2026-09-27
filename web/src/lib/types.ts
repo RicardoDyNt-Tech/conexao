@@ -5,6 +5,18 @@ export interface City { id: number; name: string }
 /** Um sentido de busca (ex.: Feira → Catu) com seus hubs, vindo de route_hubs. */
 export interface Route { origin: City; dest: City; hubs: City[] }
 
+/** Uma fonte vendendo o trecho (trips_best.offers). A taxa só entra no pagamento. */
+export interface Offer {
+  source: string;
+  trip_id: number;
+  price: number | null;
+  service_fee: number | null;
+  seats_available: number | null;
+  service_class: string | null;
+  buy_url: string | null;
+  fetched_at: string;
+}
+
 export interface Connection {
   kind: 'direct' | 'connection';
   via_city_id: number | null;
@@ -19,6 +31,9 @@ export interface Connection {
   leg1_price: number | null;
   leg1_seats: number | null;
   leg1_buy_url: string | null;
+  leg1_source: string;
+  leg1_service_fee: number | null;
+  leg1_offers: Offer[] | null;
   leg2_trip_id: number | null;
   leg2_company: string | null;
   leg2_service_class: string | null;
@@ -29,6 +44,9 @@ export interface Connection {
   leg2_price: number | null;
   leg2_seats: number | null;
   leg2_buy_url: string | null;
+  leg2_source: string | null;
+  leg2_service_fee: number | null;
+  leg2_offers: Offer[] | null;
   departure_at: string;
   arrival_at: string;
   total_price: number | null;
@@ -76,6 +94,9 @@ export interface Trip {
   seats_available: number | null;
   buy_url: string | null;
   fetched_at: string;
+  source: string;
+  service_fee: number | null;
+  offers: Offer[] | null;
 }
 
 export interface SecondLeg {
@@ -90,6 +111,9 @@ export interface SecondLeg {
   seats_available: number | null;
   buy_url: string | null;
   fetched_at: string;
+  source: string;
+  service_fee: number | null;
+  offers: Offer[] | null;
   total_price: number | null;
   same_station: boolean | null;
   compatible: boolean;
@@ -97,6 +121,7 @@ export interface SecondLeg {
 }
 
 export interface Quarantine {
+  source?: string;
   until: string;
   since: string;
   reason: string | null;
@@ -105,9 +130,17 @@ export interface Quarantine {
   travel_date: string | null;
 }
 
+export interface RoundSummary {
+  started_at: string | null; finished_at: string | null; ok: number; empty: number; error: number; blocked: number;
+}
+
+export interface SourceStatus { source: string; quarantine: Quarantine | null; last_round: RoundSummary | null }
+
 export interface CollectorStatus {
-  last_round: { started_at: string | null; finished_at: string | null; ok: number; empty: number; error: number; blocked: number } | null;
+  last_round: RoundSummary | null;
   quarantine: Quarantine | null;
+  /** Por fonte (ClickBus, Quero Passagem): cada uma tem a sua quarentena. */
+  sources?: SourceStatus[];
   open_requests: Array<{ id: number; status: RequestStatus; travel_date: string; created_at: string; from_city: string; to_city: string }>;
   collected_dates: string[];
 }

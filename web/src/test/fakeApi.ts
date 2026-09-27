@@ -1,7 +1,7 @@
 import { vi } from 'vitest';
 import type { Session } from '@supabase/supabase-js';
 import type { Api } from '../lib/api';
-import type { CollectorStatus, Connection, CoverageLeg, Route } from '../lib/types';
+import type { CollectorStatus, Connection, CoverageLeg, Offer, Route } from '../lib/types';
 
 export const FEIRA = { id: 2910800, name: 'Feira de Santana' };
 export const CATU = { id: 2907509, name: 'Catu' };
@@ -23,6 +23,7 @@ let seq = 1;
 export function conn(o: {
   date: string; dep: string; arr1: string; dep2?: string; arr: string; arrDate?: string; dep2Date?: string;
   via?: string; price?: number; same_station?: boolean | null; asOf?: string;
+  leg1Offers?: Offer[]; leg2Offers?: Offer[]; leg1Source?: string; leg2Source?: string;
 }): Connection {
   const direct = !o.dep2;
   const id = seq++;
@@ -33,6 +34,7 @@ export function conn(o: {
     leg1_origin_station: 'Rodoviária de Feira', leg1_dest_station: direct ? 'Catu, BA' : 'Rodoviária do hub',
     leg1_departure_at: bahia(o.date, o.dep), leg1_arrival_at: bahia(o.date, o.arr1),
     leg1_price: 40, leg1_seats: 30, leg1_buy_url: `https://www.clickbus.com.br/leg1/${id}`,
+    leg1_source: o.leg1Source ?? 'clickbus', leg1_service_fee: null, leg1_offers: o.leg1Offers ?? null,
     leg2_trip_id: direct ? null : id + 1000, leg2_company: direct ? null : 'Cidade Sol',
     leg2_service_class: direct ? null : 'Convencional',
     leg2_origin_station: direct ? null : 'Outra rodoviária', leg2_dest_station: direct ? null : 'Catu, BA',
@@ -40,6 +42,7 @@ export function conn(o: {
     leg2_arrival_at: direct ? null : bahia(o.arrDate ?? o.date, o.arr),
     leg2_price: direct ? null : 17.43, leg2_seats: direct ? null : 12,
     leg2_buy_url: direct ? null : `https://www.clickbus.com.br/leg2/${id}`,
+    leg2_source: direct ? null : (o.leg2Source ?? 'clickbus'), leg2_service_fee: null, leg2_offers: o.leg2Offers ?? null,
     departure_at: bahia(o.date, o.dep), arrival_at: bahia(o.arrDate ?? o.date, o.arr),
     total_price: o.price ?? 57.43, same_station: direct ? null : (o.same_station ?? true),
     data_as_of: o.asOf ?? new Date().toISOString(),
@@ -77,3 +80,8 @@ export function fakeApi(overrides: Partial<Api> = {}): Api {
     ...overrides,
   };
 }
+
+export const offer = (source: string, price: number, fee: number | null = null): Offer => ({
+  source, trip_id: price * 100, price, service_fee: fee, seats_available: 20, service_class: 'Convencional',
+  buy_url: `https://${source}.example/comprar/${price}`, fetched_at: new Date().toISOString(),
+});

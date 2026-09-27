@@ -84,8 +84,9 @@ export function supabaseApi(sb: SupabaseClient): Api {
       return check(await sb.rpc('date_coverage', { p_origin: origin, p_dest: dest, p_date: date })) as CoverageLeg[];
     },
     async firstLegs({ origin, hubIds, date }) {
-      return check(await sb.from('trips')
-        .select('id, company, service_class, origin_station, dest_station, dest_city_id, departure_at, arrival_at, price, seats_available, buy_url, fetched_at')
+      // trips_best: o mesmo ônibus em duas fontes aparece uma vez só (com as ofertas).
+      return check(await sb.from('trips_best')
+        .select('id, company, service_class, origin_station, dest_station, dest_city_id, departure_at, arrival_at, price, seats_available, buy_url, fetched_at, source, service_fee, offers')
         .eq('origin_city_id', origin).in('dest_city_id', hubIds).eq('travel_date', date)
         .order('departure_at')) as Trip[];
     },

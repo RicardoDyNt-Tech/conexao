@@ -4,6 +4,7 @@ import { useApi } from '../lib/api';
 import type { CollectorStatus, Route } from '../lib/types';
 import { href } from '../lib/router';
 import { fmtDate, fmtStamp } from '../lib/time';
+import { sourceLabel, sourceStatuses } from '../lib/sources';
 
 export function Status({ session, routes }: { session: Session; routes: Route[] }) {
   const api = useApi();
@@ -14,7 +15,6 @@ export function Status({ session, routes }: { session: Session; routes: Route[] 
     api.collectorStatus().then(setS).catch((e) => setErr((e as Error).message));
   }, [api]);
 
-  const lr = s?.last_round;
   const first = routes[0];
   return (
     <main className="screen stack">
@@ -23,26 +23,27 @@ export function Status({ session, routes }: { session: Session; routes: Route[] 
       {!s && !err && <p className="muted">Carregando…</p>}
       {s && (
         <>
-          <section>
-            <h2>Última rodada</h2>
-            {lr?.finished_at ? (
+          {(sourceStatuses(s).length ? sourceStatuses(s) : [{ source: '', quarantine: null, last_round: s.last_round }]).map((src) => (
+            <section key={src.source || 'geral'} className="source-status">
+              <h2>{src.source ? sourceLabel(src.source) : 'Coletor'}</h2>
               <p>
-                {fmtStamp(lr.finished_at)} · {lr.ok} ok · {lr.empty} sem viagens
-                {lr.error > 0 && ` · ${lr.error} com erro`}
-                {lr.blocked > 0 && ` · ${lr.blocked} bloqueado`}
+                <strong>Última rodada:</strong>{' '}
+                {src.last_round?.finished_at ? (
+                  <>
+                    {fmtStamp(src.last_round.finished_at)} · {src.last_round.ok} ok · {src.last_round.empty} sem viagens
+                    {src.last_round.error > 0 && ` · ${src.last_round.error} com erro`}
+                    {src.last_round.blocked > 0 && ` · ${src.last_round.blocked} bloqueado`}
+                  </>
+                ) : <span className="muted">nenhuma coleta registrada.</span>}
               </p>
-            ) : <p className="muted">Nenhuma coleta registrada.</p>}
-          </section>
-
-          <section>
-            <h2>Quarentena</h2>
-            {s.quarantine ? (
-              <p className="banner warn">
-                Ativa até {fmtStamp(s.quarantine.until)}. O site bloqueou o coletor
-                {s.quarantine.from_city && ` em ${s.quarantine.from_city} → ${s.quarantine.to_city}`}.
-              </p>
-            ) : <p>Não. O coletor está liberado.</p>}
-          </section>
+              {src.quarantine ? (
+                <p className="banner warn">
+                  Pausada até {fmtStamp(src.quarantine.until)}: o site bloqueou o coletor
+                  {src.quarantine.from_city && ` em ${src.quarantine.from_city} → ${src.quarantine.to_city}`}.
+                </p>
+              ) : <p><strong>Quarentena:</strong> não, liberada.</p>}
+            </section>
+          ))}
 
           <section>
             <h2>Pedidos na fila</h2>

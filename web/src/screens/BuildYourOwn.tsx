@@ -3,6 +3,7 @@ import { useApi } from '../lib/api';
 import type { CollectorStatus, Route, SecondLeg, Trip } from '../lib/types';
 import { fmtDuration, fmtMoney, fmtTime, localDate, minutesBetween } from '../lib/time';
 import { LegDetail } from '../components/ConnectionCard';
+import { sourceLabel } from '../lib/sources';
 import { QuarantineBanner } from '../components/QuarantineBanner';
 import { RefreshPanel } from '../components/RefreshPanel';
 import { SearchHeader } from './SearchHeader';
@@ -48,7 +49,7 @@ export function BuildYourOwn({ route, params }: { route: Route; params: URLSearc
   return (
     <main className="screen">
       <SearchHeader route={route} params={params} tab="m" />
-      <QuarantineBanner q={status?.quarantine ?? null} />
+      <QuarantineBanner status={status} />
       {err && <p className="error">{err}</p>}
 
       <h2>1. Escolha o 1º ônibus</h2>
@@ -65,7 +66,7 @@ export function BuildYourOwn({ route, params }: { route: Route; params: URLSearc
             <button aria-pressed={first?.id === t.id} onClick={() => setFirst(first?.id === t.id ? null : t)}>
               <span className="times">{fmtTime(t.departure_at)} → {fmtTime(t.arrival_at)}</span>
               <span>{route.origin.name} → {hubName.get(t.dest_city_id)}</span>
-              <span className="muted">{t.company}</span>
+              <span className="muted">{t.company} · {(t.offers?.length ? t.offers : [{ source: t.source }]).map((o) => sourceLabel(o.source)).join(' + ')}</span>
               <span className="price">{fmtMoney(t.price)}</span>
             </button>
           </li>
@@ -88,7 +89,7 @@ export function BuildYourOwn({ route, params }: { route: Route; params: URLSearc
                   ) : (
                     <span className="reason">{s.reason}</span>
                   )}
-                  <span className="muted">{s.company}{s.same_station === false ? ' · outra rodoviária' : ''}</span>
+                  <span className="muted">{s.company} · {(s.offers?.length ? s.offers : [{ source: s.source }]).map((o) => sourceLabel(o.source)).join(' + ')}{s.same_station === false ? ' · outra rodoviária' : ''}</span>
                   <span className="price">{fmtMoney(s.price)}</span>
                 </button>
               </li>
@@ -106,10 +107,10 @@ export function BuildYourOwn({ route, params }: { route: Route; params: URLSearc
           </p>
           <LegDetail n={1} dep={first.departure_at} arr={first.arrival_at} from={first.origin_station} to={first.dest_station}
             company={first.company} serviceClass={first.service_class} seats={first.seats_available}
-            price={first.price} buyUrl={first.buy_url} />
+            price={first.price} buyUrl={first.buy_url} source={first.source} serviceFee={first.service_fee} offers={first.offers} />
           <LegDetail n={2} dep={second.departure_at} arr={second.arrival_at} from={second.origin_station} to={second.dest_station}
             company={second.company} serviceClass={second.service_class} seats={second.seats_available}
-            price={second.price} buyUrl={second.buy_url} />
+            price={second.price} buyUrl={second.buy_url} source={second.source} serviceFee={second.service_fee} offers={second.offers} />
         </section>
       )}
       {firsts && firsts.length > 0 && !first && (
