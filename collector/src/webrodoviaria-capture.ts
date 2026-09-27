@@ -182,8 +182,13 @@ export function pickFields(fields: Field[]) {
 async function fillCity(page: Page, f: Field, city: string, steps: string[]): Promise<boolean> {
   const loc = page.locator(`[data-cx-idx="${f.idx}"]`);
   if (f.tag === 'select') {
-    const opt = f.options?.find((o) => o.toUpperCase().includes(city.toUpperCase()));
-    if (!opt) { steps.push(`select ${f.name || f.id}: opção "${city}" não encontrada`); return false; }
+    if (f.id && await page.locator(`#select2-${f.id}-container`).count()) return fillSelect2(page, f.id, city, steps);
+    // Opções lidas agora (a lista do levantamento é truncada e o destino carrega depois da origem).
+    const options = (await page.evaluate(
+      `Array.from(document.querySelector('[data-cx-idx="${f.idx}"]').options).map((o) => o.text.trim())`)) as string[];
+    const opt = options.find((o) => o.toUpperCase() === city.toUpperCase())
+      ?? options.find((o) => o.toUpperCase().includes(city.toUpperCase()));
+    if (!opt) { steps.push(`select ${f.name || f.id}: opção "${city}" não encontrada (${options.length} opções)`); return false; }
     await loc.selectOption({ label: opt });
     steps.push(`select ${f.name || f.id} = "${opt}"`);
     return true;
@@ -221,6 +226,47 @@ async function fillCity(page: Page, f: Field, city: string, steps: string[]): Pr
   return true;
 }
 
+/** Campo select2 (caixa de busca por cima do select), usado na Venda Web. */
+async function fillSelect2(page: Page, selectId: string, city: string, steps: string[]): Promise<boolean> {
+  const container = page.locator(`#select2-${selectId}-container`);
+  await container.click();
+  const search = page.locator('.select2-container--open .select2-search__field').first();
+  const full = city.split(' - ')[0]!;
+  let typed = '';
+  for (const chunk of [full.slice(0, 6), full.slice(6)].filter(Boolean)) {
+    await search.pressSequentially(chunk, { delay: 110 });
+    typed += chunk;
+    await page.waitForTimeout(1_200);
+    const options = page.locator('.select2-container--open .select2-results__option');
+    const n = await options.count();
+    for (let i = 0; i < n; i++) {
+      const txt = (await options.nth(i).innerText().catch(() => '')).trim();
+      if (txt.toUpperCase() === city.toUpperCase()) {
+        await options.nth(i).click();
+        await page.waitForTimeout(700);
+        const shown = (await container.innerText().catch(() => '')).trim();
+        steps.push(`select2 #${selectId}: digitou "${typed}", escolheu "${txt}" (mostra "${shown}")`);
+        return shown.toUpperCase().includes(full.toUpperCase());
+      }
+    }
+  }
+  await page.keyboard.press('Escape').catch(() => {});
+  steps.push(`select2 #${selectId}: "${city}" não apareceu nas opções depois de digitar "${typed}"`);
+  return false;
+}
+
+/** Espera o select (ex.: destino) ter opções, que chegam depois de escolher a origem. */
+async function waitOptions(page: Page, f: Field, ms = 8_000): Promise<number> {
+  const t0 = Date.now();
+  let n = 0;
+  while (Date.now() - t0 < ms) {
+    n = (await page.evaluate(`document.querySelector('[data-cx-idx="${f.idx}"]')?.options?.length ?? 0`).catch(() => 0)) as number;
+    if (n > 1) break;
+    await page.waitForTimeout(400);
+  }
+  return n;
+}
+
 async function fillDate(page: Page, f: Field, date: string, steps: string[]): Promise<void> {
   const [y, m, d] = date.split('-');
   const value = f.type === 'date' ? date : `${d}/${m}/${y}`;
@@ -233,6 +279,16 @@ async function fillDate(page: Page, f: Field, date: string, steps: string[]): Pr
     steps.push(`data ${f.name || f.id}: campo só-leitura; valor definido por script "${value}"`);
   }
   await page.keyboard.press('Escape').catch(() => {});      // fecha o calendário, se abriu
+}
+
+/** Página de desafio do AWS WAF (captcha "Human Verification"). O script normal do WAF não conta. */
+async function wafChallenge(page: Page): Promise<string | null> {
+  const html = (await page.content().catch(() => '')).toLowerCase();
+  const title = (await page.title().catch(() => '')).toLowerCase();
+  if (title.includes('human verification') || html.includes('awswafcaptcha') || html.includes('id="captcha-container"')) {
+    return 'desafio do AWS WAF';
+  }
+  return null;
 }
 
 export interface CaptureOpts { waitMs?: number; takePage: () => Promise<boolean>; pause: () => Promise<void> }
@@ -255,6 +311,8 @@ export async function captureWrLeg(ctx: BrowserContext, site: Site, leg: WrLeg, 
   let seq = 0;
   let blockedStatus: number | null = null;
   const page = await ctx.newPage();
+  const siteHost = new URL(site.base).host;
+  const sameSiteDoc = (u: string) => new URL(u).host === siteHost;
 
   page.on('response', (resp) => {
     const req: Request = resp.request();
@@ -263,13 +321,18 @@ export async function captureWrLeg(ctx: BrowserContext, site: Site, leg: WrLeg, 
     const n = ++seq;
     const e: NetEntry = { seq: n, kind, method: req.method(), url: redactUrl(req.url()).url, phase, status: resp.status(),
       contentType: resp.headers()['content-type'] ?? '' };
+    // Terceiros (AWS WAF da Rota, Facebook…): só URL e status. O corpo deles traz sinais do
+    // navegador do Ricardo e não interessa.
+    const sameSite = new URL(req.url()).host === siteHost;
     const post = req.postData();
-    if (post) e.postData = redactForm(post);
+    if (post && sameSite) e.postData = redactForm(post);
     // Página inteira: 401/403/429. XHR: só 403/429 (a plataforma pode responder 401 em chamadas
     // que exigem login, como o mapa de poltronas, sem que isso seja bloqueio).
     if (kind === 'document' ? BLOCK_STATUSES.has(resp.status()) : [403, 429].includes(resp.status())) blockedStatus = resp.status();
+    // AWS WAF responde 202/405 com uma página de desafio (em vez da página pedida).
+    if (kind === 'document' && sameSiteDoc(req.url()) && [202, 405].includes(resp.status())) blockedStatus = resp.status();
     net.push(e);
-    if (kind === 'document') return;
+    if (kind === 'document' || !sameSite) return;
     pending.push((async () => {
       const body = await resp.body().catch(() => null);
       e.size = body?.length ?? null;
@@ -300,9 +363,13 @@ export async function captureWrLeg(ctx: BrowserContext, site: Site, leg: WrLeg, 
     if (!(await opts.takePage())) { r.status = 'error'; r.detail = 'limite diário de páginas'; return r; }
     r.pages++;
     const nav = await page.goto(site.base, { waitUntil: 'domcontentloaded', timeout: WAIT });
-    if (nav && BLOCK_STATUSES.has(nav.status())) { r.status = 'blocked'; r.detail = `início devolveu HTTP ${nav.status()}`; return r; }
+    if (nav && (BLOCK_STATUSES.has(nav.status()) || [202, 405].includes(nav.status()))) {
+      r.status = 'blocked'; r.detail = `início devolveu HTTP ${nav.status()}`; await dump('home'); return r;
+    }
     await page.waitForLoadState('networkidle', { timeout: 15_000 }).catch(() => {});
     await page.waitForTimeout(2_000 + Math.random() * 3_000);
+    const challenge = (await wafChallenge(page)) ?? null;
+    if (challenge) { r.status = 'blocked'; r.detail = challenge; await dump('home'); return r; }
 
     const fields = (await page.evaluate(DUMP_FIELDS)) as Field[];
     await fs.writeFile(path.join(dir, 'form.fields.json'), JSON.stringify(redactTokenLike(fields), null, 2));
@@ -318,8 +385,15 @@ export async function captureWrLeg(ctx: BrowserContext, site: Site, leg: WrLeg, 
     }
 
     // 2) Preenche e pesquisa
-    await fillCity(page, pick.origin, leg.from, r.steps);
-    await fillCity(page, pick.dest, leg.to, r.steps);
+    const oneWay = fields.find((x) => x.type === 'radio' && /somente ida|apenas ida|one.?way|apenasida/i.test(`${x.label} ${x.id}`));
+    if (oneWay) { await page.locator(`[data-cx-idx="${oneWay.idx}"]`).check().catch(() => {}); r.steps.push('marcou "somente ida"'); }
+    if (!(await fillCity(page, pick.origin, leg.from, r.steps))) {
+      r.status = 'form-not-found'; r.detail = `não consegui escolher a origem "${leg.from}"`; await dump('home'); return r;
+    }
+    if (pick.dest.tag === 'select') r.steps.push(`destinos carregados: ${await waitOptions(page, pick.dest)} opções`);
+    if (!(await fillCity(page, pick.dest, leg.to, r.steps))) {
+      r.status = 'form-not-found'; r.detail = `não consegui escolher o destino "${leg.to}"`; await dump('home'); return r;
+    }
     if (pick.date) await fillDate(page, pick.date, date, r.steps);
     else r.steps.push('campo de data não identificado (segue com a data padrão do site)');
     await page.waitForTimeout(800 + Math.random() * 1_200);
@@ -336,7 +410,7 @@ export async function captureWrLeg(ctx: BrowserContext, site: Site, leg: WrLeg, 
     r.resultUrl = redactUrl(page.url()).url;
     if (blockedStatus) { r.status = 'blocked'; r.detail = `HTTP ${blockedStatus} na busca`; await dump('results'); return r; }
     r.cards = await dump('results');
-    const marker = await looksBlocked(page);
+    const marker = (await looksBlocked(page)) ?? (await wafChallenge(page));
     if (marker && r.cards === 0) { r.status = 'blocked'; r.detail = marker; return r; }
     r.status = r.cards > 0 ? 'ok' : 'empty';
 
@@ -344,7 +418,9 @@ export async function captureWrLeg(ctx: BrowserContext, site: Site, leg: WrLeg, 
     const [y, m, d] = date.split('-').map(Number) as [number, number, number];
     const next = new Date(Date.UTC(y, m - 1, d + 1));
     const label = `${String(next.getUTCDate()).padStart(2, '0')}/${String(next.getUTCMonth() + 1).padStart(2, '0')}`;
-    const tab = page.getByText(label, { exact: false }).filter({ hasNotText: /\d{2}:\d{2}/ }).first();
+    const strip = page.locator('#week-days-search');
+    const scope = (await strip.count()) ? strip : page.locator('body');
+    const tab = scope.getByText(label, { exact: false }).filter({ hasNotText: /\d{2}:\d{2}/ }).first();
     if (r.cards > 0 && await tab.isVisible().catch(() => false)) {
       await opts.pause();
       const docsBefore = net.filter((x) => x.kind === 'document').length;

@@ -330,4 +330,21 @@ comprando ida e volta juntas no site da viação. Nomes das cidades: "SALVADOR -
 - Consequência: comparar só pela vitrine (decisão da Fase 5a) favorece o QP indevidamente. A Fase 5c
   passa a comparar pelo **preço pago** (vitrine + `service_fee`).
 
-Spike: `npm run spike:webrodoviaria` (ver `collector/README.md`). Resultado: _a preencher_.
+Spike: `npm run spike:webrodoviaria` (ver `collector/README.md`).
+
+### 1ª rodada do spike (4 trechos, 10/10): sem bloqueio, mas 0 viagens (erro do spike)
+Nenhum captcha nem 403. O que a plataforma revelou:
+- **Formulário**: `POST ./busca` com `radio-idavolta`, `origem`, `origemCodigo`, `destino`,
+  `destinoCodigo`, `dataInicial` (DD/MM/AAAA), `dataFinal`, `categoriasSelecionadas`; responde 302 →
+  `GET /consulta` (por isso a URL de resultado não tem parâmetros: fica na sessão).
+- **Viagens em JSON**: a página `/consulta` busca `POST consulta/idaJson/0` (o índice deve ser o dia
+  na faixa `#week-days-search`: a confirmar). Sem cidade válida volta `[{"message":"Origem Inválida"}]`.
+- **Cidades**: campos `select2` (`#bo1` origem, `#bd1` destino; o destino carrega depois da origem).
+  Lista com códigos em `localidade/buscaLocalidade2.json` (796 localidades):
+  Salvador **630**, Catu **1008**, Feira de Santana **976**, Alagoinhas **1011**.
+- **Por que veio vazio**: o spike escolheu no `<select>` direto (e só via as 60 primeiras opções), o
+  que não preenche `origemCodigo` (foi `-1`). Corrigido: agora usa a caixa do select2 como uma pessoa.
+- **Rota tem AWS WAF** (anti-robô da Amazon): a página conversa com `token.awswaf.com` sozinha. Só
+  observamos; o tráfego de terceiros não é mais gravado (traz sinais do navegador). Desafio do WAF
+  (HTTP 202/405 ou página "Human Verification") = bloqueio. Cidade Sol não mostrou WAF.
+
