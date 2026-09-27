@@ -19,8 +19,11 @@ export interface NormalizedTrip {
   departure_at: string;
   arrival_at: string;
   service_class: string;
+  /** Preço de vitrine (o que o site anuncia). */
   price: number;
   original_price: number | null;
+  /** Taxa cobrada só no pagamento (Quero Passagem). Fora da comparação de preços. */
+  service_fee?: number | null;
   seats_available: number | null;
   seats_total: number | null;
   is_low_fare: boolean;
